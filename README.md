@@ -23,7 +23,6 @@ server/server.js           Optional secure Kite proxy
 ## Product requirements
 
 See [`docs/PRD.md`](docs/PRD.md) for the complete product requirements document, including goals, scope, functional requirements, API contracts, release plan, risks, and acceptance criteria.
-
 ## Run locally
 
 Because the app uses ES modules, serve it over HTTP instead of opening `index.html` with `file://`.
