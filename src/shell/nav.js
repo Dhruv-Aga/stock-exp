@@ -3,6 +3,7 @@
 export const NAV_ITEMS = [
   { id: "home", label: "Home", href: "/" },
   { id: "portfolio", label: "Portfolio", href: "/portfolio/" },
+  { id: "compare", label: "Compare", href: "/compare/" },
   { id: "approvals", label: "Review", href: "/approvals/", badgeKey: "pending_proposals" },
   { id: "assistant", label: "Ask", href: "/assistant/" },
   { id: "screener", label: "Research", href: "/screener/", secondary: true },

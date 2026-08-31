@@ -98,6 +98,7 @@ cmd_start() {
   echo "  http://localhost:$FRONTEND_PORT/portfolio/    Portfolio"
   echo "  http://localhost:$FRONTEND_PORT/assistant/    Ask assistant"
   echo "  http://localhost:$FRONTEND_PORT/approvals/   Review live trades"
+  echo "  http://localhost:$FRONTEND_PORT/compare/     Paper vs live A/B"
   echo "  http://localhost:$FRONTEND_PORT/screener/    Stock screener"
   echo ""
   echo "Logs: $DEV_DIR/*.log"
@@ -142,6 +143,13 @@ cmd_paper() {
   echo "Done. View at http://localhost:$FRONTEND_PORT/portfolio/"
 }
 
+cmd_ab() {
+  banner
+  echo "Running paper vs live-shadow A/B comparison..."
+  python3 "$ROOT/scripts/run_ab_compare.py"
+  echo "View at http://localhost:$FRONTEND_PORT/compare/"
+}
+
 usage() {
   banner
   echo ""
@@ -153,6 +161,7 @@ usage() {
   echo "  stop      Stop all dev services"
   echo "  status    Show what's running"
   echo "  paper     Run paper trading session and refresh dashboard"
+  echo "  ab        Run paper vs live-shadow A/B comparison"
   echo ""
   echo "Environment (optional):"
   echo "  FRONTEND_PORT=8080   AGENT_API_PORT=8000   KITE_PROXY_PORT=3000"
@@ -169,5 +178,6 @@ case "${1:-}" in
   stop) cmd_stop ;;
   status) cmd_status ;;
   paper) cmd_paper ;;
+  ab) cmd_ab ;;
   *) usage ;;
 esac

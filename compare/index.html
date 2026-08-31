@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A/B comparison between paper trading and live-shadow execution for Bharat Scout."
+    />
+    <title>Paper vs Live — Bharat Scout</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="../src/shell/shell.css" />
+    <link rel="stylesheet" href="./compare.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div id="shell-nav"></div>
+      <div id="shell-status"></div>
+
+      <header class="header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">⚖️</div>
+          <div>
+            <h1>Paper vs Live</h1>
+            <p class="sub" id="compareSubtitle">A/B parity check on the same session plan</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button class="btn-secondary" type="button" id="refreshCompareBtn">↻ Run comparison</button>
+        </div>
+      </header>
+
+      <div class="compare-empty hidden" id="emptyState">
+        <h2>No comparison data yet</h2>
+        <p>Run <code>./scripts/dev.sh ab</code> or click <strong>Run comparison</strong> above.</p>
+      </div>
+
+      <div class="compare-error hidden" id="errorState">
+        <h2>Could not load comparison</h2>
+        <p id="errorMessage"></p>
+      </div>
+
+      <main class="compare-main hidden" id="compareMain">
+        <section class="compare-kpis" id="kpiCards" aria-label="Parity summary"></section>
+
+        <div class="compare-grid">
+          <section class="card">
+            <div class="section-title">
+              <h2>Paper projection</h2>
+              <span class="compare-tag paper">fractional qty</span>
+            </div>
+            <ul class="compare-actions" id="paperActions"></ul>
+          </section>
+
+          <section class="card">
+            <div class="section-title">
+              <h2>Live shadow</h2>
+              <span class="compare-tag live">whole shares</span>
+            </div>
+            <ul class="compare-actions" id="liveActions"></ul>
+          </section>
+        </div>
+
+        <section class="card">
+          <div class="section-title">
+            <h2>Divergences</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Paper</th>
+                  <th>Live shadow</th>
+                </tr>
+              </thead>
+              <tbody id="divergenceBody"></tbody>
+            </table>
+          </div>
+          <p class="compare-muted hidden" id="noDivergences">No divergences — actions match on the same book.</p>
+        </section>
+
+        <section class="card">
+          <div class="section-title">
+            <h2>Session plan</h2>
+          </div>
+          <pre class="compare-plan" id="planDetails"></pre>
+        </section>
+      </main>
+
+      <footer class="footer">
+        Bharat Scout • Same <code>build_session_plan()</code> for paper and live •
+        <code>./scripts/dev.sh ab</code>
+      </footer>
+    </div>
+
+    <script type="module">
+      import { initShell } from "../src/shell/init.js";
+      initShell({ page: "compare" });
+    </script>
+    <script type="module" src="./compare.js"></script>
+  </body>
+</html>
