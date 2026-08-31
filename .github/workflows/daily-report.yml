@@ -6,6 +6,15 @@ on:
     - cron: '30 10 * * 1-5'
   workflow_dispatch: {}
 
+# Ensure the workflow has permission to push and manage Pages. If your org restricts
+# GITHUB_TOKEN write access this may still fail — in that case create a PAT and
+# store it in GH_PAGES_DEPLOY_TOKEN secret, then uncomment personal_token below.
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+
 jobs:
   build:
     runs-on: ubuntu-latest
