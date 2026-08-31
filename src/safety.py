@@ -41,16 +41,16 @@ def kill_switch_active() -> bool:
     return get_state("kill_switch", "off") == "on"
 
 
-def check_can_trade(*, require_market_open: bool = True) -> None:
+def check_can_trade(*, require_market_open: bool = True, run_type: str = "live") -> None:
     if kill_switch_active():
         reason = get_state("kill_switch_reason", "kill switch enabled")
         raise SafetyHalt(f"Trading halted: {reason}")
 
-    today_pnl = get_today_realized_pnl()
+    today_pnl = get_today_realized_pnl(run_type=run_type)
     max_loss = settings.max_daily_loss()
     if today_pnl <= -max_loss:
         raise SafetyHalt(
-            f"Daily loss limit hit: Rs {today_pnl:,.0f} (limit Rs {max_loss:,.0f})"
+            f"Daily loss limit hit ({run_type}): Rs {today_pnl:,.0f} (limit Rs {max_loss:,.0f})"
         )
 
     if require_market_open and not is_market_open():

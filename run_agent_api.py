@@ -116,6 +116,26 @@ def trading_summary():
     }
 
 
+@app.get("/api/trading/ab-comparison")
+def ab_comparison_get(refresh: bool = False):
+    """Return cached A/B comparison, or run a fresh one when refresh=true."""
+    from src.ab_compare import load_ab_comparison, run_ab_comparison
+
+    if refresh:
+        return run_ab_comparison(refresh=True, save=True)
+    cached = load_ab_comparison()
+    if cached:
+        return cached
+    return run_ab_comparison(refresh=False, save=True)
+
+
+@app.post("/api/trading/ab-comparison")
+def ab_comparison_post(refresh: bool = True):
+    from src.ab_compare import run_ab_comparison
+
+    return run_ab_comparison(refresh=refresh, save=True)
+
+
 @app.get("/api/agent/tools")
 def tools():
     return {"tools": list_available_tools()}

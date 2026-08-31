@@ -18,10 +18,12 @@ Open:
 | http://localhost:8080/portfolio/ | Portfolio (overview + full dashboard) |
 | http://localhost:8080/assistant/ | Ask the assistant |
 | http://localhost:8080/approvals/ | Approve live trades |
+| http://localhost:8080/compare/ | Paper vs live A/B parity |
 | http://localhost:8080/screener/ | Stock screener |
 
 ```bash
 ./scripts/dev.sh paper        # run paper session + refresh dashboard
+./scripts/dev.sh ab           # paper vs live-shadow A/B comparison
 ./scripts/dev.sh status       # see what's running
 ./scripts/dev.sh stop         # stop all services
 ```

@@ -9,22 +9,15 @@ from pathlib import Path
 
 from config import INITIAL_CAPITAL, MARKETS
 from src import settings
-from src.backtest import STRATEGY_MAP
 from src.broker.kite_client import KiteClient
 from src.broker.order_manager import OrderManager, TradeIntent
-from src.broker.symbol_map import can_trade_side
-from src.data_loader import load_market_data
-from src.db import init_db, recent_orders, update_daily_pnl, record_trade, recent_trades
-from src.risk import (
-    Position,
-    Portfolio,
-    calc_position_size,
-    calc_stop,
-    correlation_blocks_new_trade,
-    portfolio_equity,
-)
+from src.broker.symbol_map import round_quantity
+from src.db import init_db, recent_orders, record_session_equity, record_trade, recent_trades, update_daily_pnl
+from src.risk import Position, Portfolio, portfolio_equity
+from src.risk_governor import format_risk_decision
 from src.safety import SafetyHalt, check_can_trade, is_market_open
 from src.approvals.propose import propose_entry, propose_exit, proposal_action_suffix
+from src.trading.session_plan import build_session_plan
 
 logger = logging.getLogger(__name__)
 
@@ -89,194 +82,162 @@ def _sync_broker_positions(client: KiteClient, portfolio: Portfolio) -> None:
             )
 
 
+def _run_type() -> str:
+    return "dry_run" if settings.dry_run_mode() else "live"
+
+
 def run_live_session(*, refresh: bool = True, force: bool = False) -> str:
     """
     Evaluate signals and route orders through Zerodha (or dry-run log).
 
+    Uses the same session plan as paper trading (governor, exits, entries).
     force=True skips market-hours check (useful for testing).
     """
     settings.load_settings()
     init_db()
 
     mode = "DRY RUN" if settings.dry_run_mode() else "LIVE"
+    run_type = _run_type()
     client = KiteClient()
     orders = OrderManager(client)
     portfolio = _load_state()
     actions: list[str] = []
-    prices: dict[str, float] = {}
 
     try:
         if not force:
-            check_can_trade(require_market_open=not settings.dry_run_mode())
-        elif kill_switch_only():
-            check_can_trade(require_market_open=False)
+            check_can_trade(require_market_open=not settings.dry_run_mode(), run_type=run_type)
+        elif kill_switch_only(run_type):
+            check_can_trade(require_market_open=False, run_type=run_type)
     except SafetyHalt as exc:
-        return _format_report(mode, portfolio, prices, [str(exc)], client)
+        return _format_report(mode, portfolio, {}, [str(exc)], client, plan_risk={})
 
     if client.is_live:
         client.load_instruments()
         _sync_broker_positions(client, portfolio)
 
-    cash_only = settings.cash_only_mode()
-    needs_approval = (
-        not settings.dry_run_mode()
-        and settings.require_trade_approval()
-    )
+    needs_approval = not settings.dry_run_mode() and settings.require_trade_approval()
 
-    for m in MARKETS:
-        df = load_market_data(
-            m.symbol, m.interval, refresh=refresh, prefer_kite=client.is_live, kite_client=client
-        )
-        signals = STRATEGY_MAP[m.strategy](df)
-        if signals.empty:
+    plan = build_session_plan(
+        portfolio,
+        refresh=refresh,
+        prefer_kite=client.is_live,
+        kite_client=client if client.is_live else None,
+    )
+    prices = plan.prices
+
+    for intent in plan.exit_intents:
+        market = next((m for m in MARKETS if m.symbol == intent.symbol), None)
+        if not market:
+            continue
+        pos = portfolio.positions.get(intent.symbol)
+        if not pos:
             continue
 
-        row = signals.iloc[-1]
-        ts = signals.index[-1]
-        price = float(row["Close"])
-        atr = float(row.get("atr", 0) or 0)
-        signal = int(row.get("signal", 0) or 0)
-        prices[m.symbol] = price
-
-        pos = portfolio.positions.get(m.symbol)
-
-        # Stop-loss hit
-        if pos:
-            stopped = False
-            if pos.side == 1 and row["Low"] <= pos.stop_price:
-                exit_price = pos.stop_price
-                stopped = True
-            elif pos.side == -1 and row["High"] >= pos.stop_price:
-                exit_price = pos.stop_price
-                stopped = True
-
-            if stopped:
-                intent = TradeIntent(
-                    symbol=m.symbol,
-                    side=pos.side,
-                    quantity=pos.quantity,
-                    price=exit_price,
-                    stop_price=pos.stop_price,
-                    reason="stop_loss",
-                )
-                if needs_approval:
-                    proposal = propose_exit(
-                        symbol=m.symbol,
-                        side=pos.side,
-                        quantity=pos.quantity,
-                        price=exit_price,
-                        reason="stop_loss",
-                        strategy=m.strategy,
-                        source="automation",
-                    )
-                    actions.append(
-                        f"PROPOSED STOP {m.name} — {proposal_action_suffix(proposal)}"
-                    )
-                else:
-                    result = orders.exit(intent, position_side=pos.side)
-                    pnl = (exit_price - pos.entry_price) * pos.quantity * pos.side
-                    _close_local(portfolio, m.symbol, exit_price, ts, "stop_loss", pnl)
-                    update_daily_pnl(realized_delta=pnl)
-                    actions.append(
-                        f"STOP {m.name} [{result.status}] order={result.order_id} P&L Rs{pnl:,.0f}"
-                    )
-                pos = None
-
-        # Signal exit
-        if pos and signal != 0 and signal != pos.side:
-            intent = TradeIntent(
-                symbol=m.symbol,
-                side=signal,
+        trade_intent = TradeIntent(
+            symbol=intent.symbol,
+            side=intent.side,
+            quantity=int(pos.quantity),
+            price=intent.price,
+            stop_price=intent.stop_price,
+            reason=intent.reason_code,
+        )
+        if needs_approval:
+            proposal = propose_exit(
+                symbol=intent.symbol,
+                side=intent.side,
                 quantity=pos.quantity,
-                price=price,
-                stop_price=pos.stop_price,
-                reason="signal_exit",
+                price=intent.price,
+                reason=intent.reason_code,
+                strategy=intent.strategy,
+                source="automation",
             )
-            if needs_approval:
-                proposal = propose_exit(
-                    symbol=m.symbol,
-                    side=pos.side,
-                    quantity=pos.quantity,
-                    price=price,
-                    reason="signal_exit",
-                    strategy=m.strategy,
-                    source="automation",
-                )
-                actions.append(
-                    f"PROPOSED EXIT {m.name} — {proposal_action_suffix(proposal)}"
-                )
-            else:
-                result = orders.exit(intent, position_side=pos.side)
-                pnl = (price - pos.entry_price) * pos.quantity * pos.side
-                _close_local(portfolio, m.symbol, price, ts, "signal_exit", pnl)
-                update_daily_pnl(realized_delta=pnl)
-                actions.append(
-                    f"EXIT {m.name} [{result.status}] order={result.order_id} P&L Rs{pnl:,.0f}"
-                )
-            pos = None
+            actions.append(
+                f"PROPOSED EXIT {intent.name} ({intent.reason_code}) — "
+                f"{proposal_action_suffix(proposal)}"
+            )
+        else:
+            result = orders.exit(trade_intent, position_side=pos.side)
+            pnl = (intent.price - pos.entry_price) * pos.quantity * pos.side
+            _close_local(portfolio, intent.symbol, intent.price, intent.ts, intent.reason_code, pnl)
+            update_daily_pnl(realized_delta=pnl, run_type=run_type)
+            actions.append(
+                f"EXIT {intent.name} [{result.status}] order={result.order_id} "
+                f"P&L Rs{pnl:,.0f} ({intent.reason_code})"
+            )
 
-        # New entry
-        if not pos and signal != 0 and atr > 0:
-            if not can_trade_side(m.symbol, signal, cash_only=cash_only):
-                actions.append(f"SKIP {m.name} - short not allowed in cash-only mode")
-                continue
-            if correlation_blocks_new_trade(m.symbol, signal, m.group, portfolio.positions):
-                actions.append(f"SKIP {m.name} - correlation filter")
-                continue
+    for msg in plan.skip_messages:
+        actions.append(msg)
 
-            equity = portfolio_equity(portfolio, prices)
-            qty = calc_position_size(equity, price, atr)
-            if qty <= 0:
-                continue
-            stop = calc_stop(price, signal, atr)
-            intent = TradeIntent(
-                symbol=m.symbol,
-                side=signal,
+    for intent in plan.entry_intents:
+        market = next((m for m in MARKETS if m.symbol == intent.symbol), None)
+        if not market:
+            continue
+
+        qty = float(round_quantity(intent.symbol, intent.quantity))
+        if qty <= 0:
+            actions.append(f"SKIP {intent.name} - rounded quantity is zero")
+            continue
+
+        trade_intent = TradeIntent(
+            symbol=intent.symbol,
+            side=intent.side,
+            quantity=int(qty),
+            price=intent.price,
+            stop_price=intent.stop_price,
+            reason="signal_entry",
+        )
+        if needs_approval:
+            proposal = propose_entry(
+                symbol=intent.symbol,
+                side=intent.side,
                 quantity=qty,
-                price=price,
-                stop_price=stop,
-                reason="signal_entry",
+                price=intent.price,
+                stop_price=intent.stop_price,
+                reason=intent.reason_text,
+                strategy=intent.strategy,
+                source="automation",
             )
-            if needs_approval:
-                proposal = propose_entry(
-                    symbol=m.symbol,
-                    side=signal,
-                    quantity=qty,
-                    price=price,
-                    stop_price=stop,
-                    reason="signal_entry",
-                    strategy=m.strategy,
-                    source="automation",
-                )
-                side = "LONG" if signal == 1 else "SHORT"
+            side = "LONG" if intent.side == 1 else "SHORT"
+            mult = plan.risk_decision.get("risk_multiplier", 1.0)
+            mult_note = f" [risk {mult:.2f}x]" if mult != 1.0 else ""
+            actions.append(
+                f"PROPOSED {side} {intent.name} qty={qty:.0f} stop=Rs{intent.stop_price:.2f}{mult_note} — "
+                f"{proposal_action_suffix(proposal)}"
+            )
+        else:
+            result = orders.enter(trade_intent)
+            if result.status in ("PLACED", "DRY_RUN"):
+                _open_local(portfolio, market, intent.side, intent.price, qty, intent.stop_price, intent.ts)
+                side = "LONG" if intent.side == 1 else "SHORT"
+                mult = plan.risk_decision.get("risk_multiplier", 1.0)
+                mult_note = f" [risk {mult:.2f}x]" if mult != 1.0 else ""
                 actions.append(
-                    f"PROPOSED {side} {m.name} qty={qty:.0f} stop=Rs{stop:.2f} — "
-                    f"{proposal_action_suffix(proposal)}"
+                    f"ENTER {side} {intent.name} [{result.status}] order={result.order_id} "
+                    f"qty={qty:.0f} stop=Rs{intent.stop_price:.2f}{mult_note}"
                 )
             else:
-                result = orders.enter(intent)
-                if result.status in ("PLACED", "DRY_RUN"):
-                    _open_local(portfolio, m, signal, price, qty, stop, ts)
-                    side = "LONG" if signal == 1 else "SHORT"
-                    actions.append(
-                        f"ENTER {side} {m.name} [{result.status}] order={result.order_id} "
-                        f"qty={qty:.0f} stop=Rs{stop:.2f}"
-                    )
-                else:
-                    actions.append(f"FAILED entry {m.name}: {result.message}")
+                actions.append(f"FAILED entry {intent.name}: {result.message}")
 
+    equity = portfolio_equity(portfolio, prices)
+    unrealized = sum(
+        (prices.get(sym, p.entry_price) - p.entry_price) * p.quantity * p.side
+        for sym, p in portfolio.positions.items()
+    )
+    record_session_equity(
+        equity=equity, cash=portfolio.cash, unrealized=unrealized, run_type=run_type
+    )
     _save_state(portfolio)
-    return _format_report(mode, portfolio, prices, actions, client)
+    return _format_report(mode, portfolio, prices, actions, client, plan_risk=plan.risk_decision)
 
 
-def kill_switch_only() -> bool:
+def kill_switch_only(run_type: str = "live") -> bool:
     from src.safety import kill_switch_active
     from src.db import get_today_realized_pnl
     from src import settings as s
 
     if kill_switch_active():
         return True
-    return get_today_realized_pnl() <= -s.max_daily_loss()
+    return get_today_realized_pnl(run_type=run_type) <= -s.max_daily_loss()
 
 
 def _open_local(portfolio, market, side, price, qty, stop, ts):
@@ -330,18 +291,24 @@ def _close_local(portfolio, symbol, price, ts, reason, pnl):
     )
 
 
-def _format_report(mode, portfolio, prices, actions, client) -> str:
+def _format_report(mode, portfolio, prices, actions, client, *, plan_risk: dict) -> str:
     equity = portfolio_equity(portfolio, prices)
     market_status = "OPEN" if is_market_open() else "CLOSED"
     lines = [
         "=" * 60,
         f"ZERODHA EXECUTION - {mode} - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
         "=" * 60,
-        f"Market: {market_status}  |  Equity: Rs{equity:,.0f}  |  Cash: Rs{portfolio.cash:,.0f}",
-        f"Open positions: {len(portfolio.positions)}  |  Trades: {len(portfolio.trades)}",
-        f"Kite connected: {'yes' if client.is_live else 'no (dry-run)'}",
-        "",
     ]
+    if plan_risk:
+        lines.extend([format_risk_decision(plan_risk), ""])
+    lines.extend(
+        [
+            f"Market: {market_status}  |  Equity: Rs{equity:,.0f}  |  Cash: Rs{portfolio.cash:,.0f}",
+            f"Open positions: {len(portfolio.positions)}  |  Trades: {len(portfolio.trades)}",
+            f"Kite connected: {'yes' if client.is_live else 'no (dry-run)'}",
+            "",
+        ]
+    )
     if actions:
         lines.append("Actions:")
         lines.extend(f"  * {a}" for a in actions)
