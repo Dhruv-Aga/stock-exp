@@ -11,5 +11,8 @@
       "command": "cd server && npm start"
     }
   ],
-  "ports": [8080, 3000]
+  "ports": [
+    { "name": "frontend", "port": 8080 },
+    { "name": "kite-proxy", "port": 3000 }
+  ]
 }
