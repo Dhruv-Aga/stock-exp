@@ -60,4 +60,7 @@ jobs:
         with:
           publish_dir: ./docs
           publish_branch: gh-pages
+          # Prefer an explicit personal access token if you store it in GH_PAGES_DEPLOY_TOKEN.
+          # If that secret is not set, the action will fall back to the default GITHUB_TOKEN.
+          personal_token: ${{ secrets.GH_PAGES_DEPLOY_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
