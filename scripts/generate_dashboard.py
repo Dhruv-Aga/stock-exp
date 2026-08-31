@@ -122,6 +122,31 @@ def render_html(analysis: dict) -> str:
     html_lines.append("</div>")
     html_lines.append("</div>")
 
+    # All trades table (for client-side filtering)
+    all_trades = analysis.get('recent_trades') or []
+    html_lines.append("<div class=\"card\"><h2>All closed trades</h2>")
+    html_lines.append("<div class=\"muted\">Search: <input id=\"tradeFilter\" placeholder=\"symbol or side\" /></div>")
+    if not all_trades:
+        html_lines.append("<div class=\"muted\">No closed trades</div>")
+    else:
+        html_lines.append("<table id=\"allTradesTable\">")
+        html_lines.append("<thead><tr><th>Exit</th><th>Symbol</th><th>Side</th><th>Entry</th><th>Exit</th><th>P&L</th><th>Reason</th></tr></thead><tbody>")
+        for t in all_trades:
+            pnl = float(t.get('pnl',0))
+            cls = 'pos-positive' if pnl >= 0 else 'pos-negative'
+            exit_time = str(t.get('exit_time',''))[:16]
+            reason = t.get('reason','') or ''
+            html_lines.append(
+                f"<tr><td>{html.escape(exit_time)}</td>"
+                f"<td>{html.escape(t.get('symbol',''))}</td>"
+                f"<td>{html.escape(t.get('side',''))}</td>"
+                f"<td>{money(t.get('entry_price',0))}</td>"
+                f"<td>{money(t.get('exit_price',0))}</td>"
+                f"<td class=\"{cls}\">{money(pnl)}</td>"
+                f"<td>{html.escape(str(reason))}</td></tr>")
+        html_lines.append("</tbody></table>")
+    html_lines.append("</div>")
+
     # Embed data for charts and render JS
     html_lines.append("<script>")
     html_lines.append(f"const equityLabels = {json.dumps(daily_labels)};")
@@ -134,6 +159,9 @@ def render_html(analysis: dict) -> str:
 
     html_lines.append(r"const tradesCtx = document.getElementById('tradesChart').getContext('2d');")
     html_lines.append(r"new Chart(tradesCtx, { type: 'bar', data: { labels: tradesLabels, datasets: [{ label: 'P&L', data: tradesData, backgroundColor: tradesData.map(v => v>=0 ? 'rgba(40,167,69,0.7)' : 'rgba(220,53,69,0.7)') }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { maxRotation: 60, minRotation: 30 } } } } });")
+
+    # Simple client-side filter for allTradesTable
+    html_lines.append(r"document.getElementById('tradeFilter')?.addEventListener('input', function(e){ const q = e.target.value.toLowerCase(); document.querySelectorAll('#allTradesTable tbody tr').forEach(r => { r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none'; }); });")
 
     html_lines.append("</script>")
 
