@@ -23,19 +23,27 @@
     .controls { display:flex; gap:8px; align-items:center }
     input[type=search] { padding:6px 8px; border-radius:6px; border:1px solid #ddd }
     .download { padding:6px 10px; border-radius:6px; background:#0366d6; color:#fff; border:none }
+    .site-nav { display:flex; gap:16px; margin-bottom:12px; font-size:0.9rem }
+    .site-nav a { color:#0366d6; text-decoration:none }
+    .site-nav a:hover { text-decoration:underline }
     </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+<nav class="site-nav">
+<a href="/">← Bharat Scout</a>
+<a href="/tracker/">Portfolio Tracker</a>
+<a href="/paper/">Paper Dashboard</a>
+</nav>
 <header>
 <h1>India Trading Bot — Paper Dashboard</h1>
-<div class="meta">Generated: 2026-08-31 12:44</div>
+<div class="meta">Generated: 2026-08-31 18:59</div>
 </header>
 <div class="cards">
-<div class="card small"><div class="muted">Equity</div><div><strong>Rs 103,042</strong></div></div>
-<div class="card small"><div class="muted">Cash</div><div><strong>Rs 65,313</strong></div></div>
-<div class="card small"><div class="muted">Unrealized</div><div><strong>Rs 3,109</strong></div></div>
-<div class="card small"><div class="muted">Closed trades</div><div><strong>2</strong></div></div>
+<div class="card small"><div class="muted">Equity</div><div><strong>Rs 100,000</strong></div></div>
+<div class="card small"><div class="muted">Cash</div><div><strong>Rs 50,000</strong></div></div>
+<div class="card small"><div class="muted">Unrealized</div><div><strong>Rs 0</strong></div></div>
+<div class="card small"><div class="muted">Closed trades</div><div><strong>0</strong></div></div>
 </div>
 <div class="controls">
 <input id="globalFilter" type="search" placeholder="Filter trades / symbols" />
@@ -50,50 +58,33 @@
 <div>
 <div class="card"><h3>Portfolio snapshot</h3>
 <ul>
-<li>Equity: <strong>Rs 103,042</strong></li>
-<li>Cash: <strong>Rs 65,313</strong></li>
-<li>Unrealized P&L: <strong>Rs 3,109</strong></li>
-<li>Total return: <strong>+3.04%</strong></li>
-<li>Open positions: <strong>3</strong></li>
+<li>Equity: <strong>Rs 100,000</strong></li>
+<li>Cash: <strong>Rs 50,000</strong></li>
+<li>Unrealized P&L: <strong>Rs 0</strong></li>
+<li>Total return: <strong>+0.00%</strong></li>
+<li>Open positions: <strong>2</strong></li>
 </ul></div>
 <div class="card"><h3>Positions</h3>
 <table>
 <tr><th>Symbol</th><th>Side</th><th>Entry</th><th>Mark</th><th>Qty</th><th>uP&L</th></tr>
-<tr><td>BHEL.NS</td><td>LONG</td><td>Rs 404</td><td>Rs 428</td><td>61.96</td><td class="pos-positive">Rs 1,518</td></tr>
-<tr><td>VISL.NS</td><td>LONG</td><td>Rs 37</td><td>Rs 38</td><td>678.79</td><td class="pos-positive">Rs 665</td></tr>
-<tr><td>VAML.NS</td><td>SHORT</td><td>Rs 465</td><td>Rs 437</td><td>33.08</td><td class="pos-positive">Rs 926</td></tr>
+<tr><td>VISL.NS</td><td>LONG</td><td>Rs 37</td><td>Rs 37</td><td>676.04</td><td class="pos-positive">Rs 0</td></tr>
+<tr><td>BHEL.NS</td><td>LONG</td><td>Rs 443</td><td>Rs 443</td><td>56.48</td><td class="pos-positive">Rs 0</td></tr>
 </table>
 </div>
 <div class="card"><h3>Symbol summary</h3>
-<table>
-<tr><th>Symbol</th><th>Trades</th><th>Total P&L</th><th>Quantity</th></tr>
-<tr><td>VAML.NS</td><td>1</td><td class="pos-negative">Rs -67</td><td>38.60</td></tr>
-<tr><td>VEDL.NS</td><td>1</td><td class="pos-positive">Rs 750</td><td>50.00</td></tr>
-</table>
+<div class="muted">No closed trades</div>
 </div>
 </div>
 <div class="card"><h3>All closed trades</h3>
 <div class="muted">Use the search box above to filter. Click headers to sort.</div>
-<table id="allTradesTable">
-<thead><tr>
-<th class="sortable">Exit</th>
-<th class="sortable">Symbol</th>
-<th class="sortable">Side</th>
-<th class="sortable">Entry</th>
-<th class="sortable">Exit</th>
-<th class="sortable">P&L</th>
-<th class="sortable">Reason</th>
-</tr></thead><tbody>
-<tr><td>2026-08-27 09:15</td><td>VAML.NS</td><td>short</td><td>Rs 463</td><td>Rs 464</td><td class="pos-negative">Rs -67</td><td>Entry: Short: price above upper Bollinger Band and RSI &gt; 70 (mean reversion sell) | Exit: Stop loss hit (1 ATR hard stop)</td></tr>
-<tr><td>2026-06-25T11:45</td><td>VEDL.NS</td><td>long</td><td>Rs 450</td><td>Rs 465</td><td class="pos-positive">Rs 750</td><td>signal_exit</td></tr>
-</tbody></table>
+<div class="muted">No closed trades</div>
 </div>
 <script>
-const equityLabels = ["2026-08-31", "2026-08-30", "2026-08-29", "2026-08-28", "2026-08-27", "2026-08-26", "2026-08-23", "2026-08-20"];
-const equityData = [103042.2, 103128.72, 103128.72, 103128.72, 103609.05, 102067.14, 100636.12, 100885.4];
-const tradesLabels = ["2026-08-27 09:15", "2026-06-25T11:45"];
-const tradesData = [-67.17141735734202, 750.0];
-const allTrades = [{"id": 4, "symbol": "VAML.NS", "side": "short", "quantity": 38.59913508365411, "entry_time": "2026-08-26 15:15:00+05:30", "entry_price": 462.75, "exit_time": "2026-08-27 09:15:00+05:30", "exit_price": 464.49023115315316, "pnl": -67.17141735734202, "return_pct": -0.3760629180233735, "reason": "Entry: Short: price above upper Bollinger Band and RSI > 70 (mean reversion sell) | Exit: Stop loss hit (1 ATR hard stop)", "run_type": "paper", "dry_run": 1}, {"id": 1, "symbol": "VEDL.NS", "side": "long", "quantity": 50.0, "entry_time": "2026-06-25T09:30:00", "entry_price": 450.0, "exit_time": "2026-06-25T11:45:00", "exit_price": 465.0, "pnl": 750.0, "return_pct": 3.3333333333333335, "reason": "signal_exit", "run_type": "paper", "dry_run": 1}];
+const equityLabels = ["2026-08-31"];
+const equityData = [100000.0];
+const tradesLabels = [];
+const tradesData = [];
+const allTrades = [];
 const equityCtx = document.getElementById('equityChart').getContext('2d');
 new Chart(equityCtx, { type: 'line', data: { labels: equityLabels, datasets: [{ label: 'Equity', data: equityData, borderColor: 'rgb(33,150,243)', backgroundColor: 'rgba(33,150,243,0.08)', tension: 0.2 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } } });
 const cumCtx = document.getElementById('cumChart').getContext('2d');

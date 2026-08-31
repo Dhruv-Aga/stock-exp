@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Portfolio tracker for India Trading Bot paper trading — equity, positions, and performance."
+    />
+    <title>Portfolio Tracker — Bharat Scout</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="./tracker.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <nav class="site-nav" aria-label="Main">
+        <a href="/">Screener</a>
+        <a href="/tracker/" aria-current="page">Portfolio Tracker</a>
+        <a href="/paper/">Paper Dashboard</a>
+      </nav>
+
+      <header class="header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">📊</div>
+          <div>
+            <h1>Portfolio Tracker</h1>
+            <p class="sub" id="generatedAt">Loading portfolio data…</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <a class="btn-secondary tracker-link" href="/paper/">Full Dashboard →</a>
+        </div>
+      </header>
+
+      <div class="tracker-empty hidden" id="emptyState">
+        <h2>No portfolio data yet</h2>
+        <p>
+          Run <code>python scripts/generate_dashboard.py --refresh</code> locally, or wait for the
+          daily CI workflow to publish <code>paper/analysis.json</code>.
+        </p>
+      </div>
+
+      <div class="tracker-error hidden" id="errorState">
+        <h2>Could not load portfolio data</h2>
+        <p id="errorMessage"></p>
+      </div>
+
+      <main class="tracker-main hidden" id="trackerMain">
+        <section class="tracker-kpis" id="kpiCards" aria-label="Portfolio summary"></section>
+
+        <div class="tracker-grid">
+          <section class="card tracker-chart-card">
+            <div class="section-title">
+              <h2>Equity trend</h2>
+            </div>
+            <canvas id="equityChart" height="180"></canvas>
+          </section>
+
+          <section class="card">
+            <div class="section-title">
+              <h2>Open positions</h2>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th>Side</th>
+                    <th>Entry</th>
+                    <th>Mark</th>
+                    <th>Qty</th>
+                    <th>uP&amp;L</th>
+                  </tr>
+                </thead>
+                <tbody id="positionsBody"></tbody>
+              </table>
+            </div>
+            <p class="tracker-muted hidden" id="noPositions">No open positions</p>
+          </section>
+        </div>
+
+        <section class="card">
+          <div class="section-title">
+            <h2>Recent closed trades</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Exit</th>
+                  <th>Symbol</th>
+                  <th>Side</th>
+                  <th>P&amp;L</th>
+                  <th>Return</th>
+                </tr>
+              </thead>
+              <tbody id="tradesBody"></tbody>
+            </table>
+          </div>
+          <p class="tracker-muted hidden" id="noTrades">No closed trades yet</p>
+        </section>
+      </main>
+
+      <footer class="footer">
+        Bharat Scout • Portfolio data from <code>paper/analysis.json</code> •
+        <a href="/paper/">View full paper dashboard</a>
+      </footer>
+    </div>
+
+    <script type="module" src="./tracker.js"></script>
+  </body>
+</html>

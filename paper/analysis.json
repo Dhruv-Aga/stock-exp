@@ -1,0 +1,166 @@
+{
+  "generated_at": "2026-08-31T18:59:30.378295",
+  "state_updated": "2026-08-31T18:59:30.377011",
+  "session_actions": [
+    "ENTER LONG Vedanta Iron & Steel @ Rs36.98 qty=676.04 stop=Rs35.93 - Long: fast EMA(20) crossed above slow EMA(50) (trend following)",
+    "ENTER LONG BHEL @ Rs442.65 qty=56.48 stop=Rs434.84 - Long: fast EMA(20) crossed above slow EMA(50) (trend following)"
+  ],
+  "data_as_of": {
+    "VAML.NS": "2026-08-31 15:15:00+05:30",
+    "VEDL.NS": "2026-08-31 15:15:00+05:30",
+    "VEDPOWER.NS": "2026-08-31 15:15:00+05:30",
+    "VISL.NS": "2026-08-31 13:15:00+05:30",
+    "BHEL.NS": "2026-08-31 13:15:00+05:30"
+  },
+  "equity": 100000.0,
+  "cash": 50000.0,
+  "unrealized_pnl": 0.0,
+  "realized_pnl_all": 0,
+  "total_pnl": 0.0,
+  "total_return_pct": 0.0,
+  "today_pnl": 0.0,
+  "week_pnl": 0.0,
+  "month_pnl": 0.0,
+  "week_start": "2026-08-31",
+  "month_start": "2026-08-01",
+  "today_trades": [],
+  "recent_trades": [],
+  "open_positions": [
+    {
+      "symbol": "VISL.NS",
+      "name": "Vedanta Iron & Steel",
+      "side": "LONG",
+      "entry_price": 36.97999954223633,
+      "mark_price": 36.97999954223633,
+      "quantity": 676.0411116675788,
+      "unrealized_pnl": 0.0,
+      "entry_reason": "Long: fast EMA(20) crossed above slow EMA(50) (trend following)",
+      "entry_time": "2026-08-31 13:15:00+05:30",
+      "stop_price": 35.932057277048486
+    },
+    {
+      "symbol": "BHEL.NS",
+      "name": "BHEL",
+      "side": "LONG",
+      "entry_price": 442.6499938964844,
+      "mark_price": 442.6499938964844,
+      "quantity": 56.47803082506392,
+      "unrealized_pnl": 0.0,
+      "entry_reason": "Long: fast EMA(20) crossed above slow EMA(50) (trend following)",
+      "entry_time": "2026-08-31 13:15:00+05:30",
+      "stop_price": 434.8424236923545
+    }
+  ],
+  "daily_equity": [
+    {
+      "date": "2026-08-31",
+      "realized_pnl": 0.0,
+      "unrealized_pnl": 0.0,
+      "equity": 100000.0
+    }
+  ],
+  "total_closed_trades": 0,
+  "markets": [
+    "Vedanta Aluminium",
+    "Vedanta",
+    "Vedanta Power",
+    "Vedanta Iron & Steel",
+    "BHEL"
+  ],
+  "risk_decision": {
+    "action": "neutral",
+    "risk_multiplier": 1.0,
+    "block_new_entries": false,
+    "reason": "Risk metrics within normal bounds. (LLM disabled: GROQ_API_KEY missing)",
+    "confidence": "medium",
+    "source": "rules",
+    "rule_baseline": {
+      "action": "neutral",
+      "risk_multiplier": 1.0,
+      "block_new_entries": false,
+      "reason": "Risk metrics within normal bounds.",
+      "confidence": "medium",
+      "source": "rules",
+      "rule_baseline": {},
+      "llm_raw": null
+    },
+    "llm_raw": null
+  },
+  "signals": [
+    {
+      "symbol": "VAML.NS",
+      "name": "Vedanta Aluminium",
+      "strategy": "mean_reversion",
+      "interval": "15m",
+      "group": "vedanta",
+      "bar_time": "2026-08-31 15:15:00+05:30",
+      "price": 436.70001220703125,
+      "atr": 2.2525164275415412,
+      "signal": 0,
+      "signal_label": "flat",
+      "entry_reason_text": "No entry signal",
+      "has_position": false,
+      "position_side": null
+    },
+    {
+      "symbol": "VEDL.NS",
+      "name": "Vedanta",
+      "strategy": "momentum_breakout",
+      "interval": "1h",
+      "group": "vedanta",
+      "bar_time": "2026-08-31 15:15:00+05:30",
+      "price": 278.20001220703125,
+      "atr": 2.6035477941489615,
+      "signal": 0,
+      "signal_label": "flat",
+      "entry_reason_text": "No entry signal",
+      "has_position": false,
+      "position_side": null
+    },
+    {
+      "symbol": "VEDPOWER.NS",
+      "name": "Vedanta Power",
+      "strategy": "momentum_breakout",
+      "interval": "1h",
+      "group": "vedanta",
+      "bar_time": "2026-08-31 15:15:00+05:30",
+      "price": 35.34000015258789,
+      "atr": 0.3544635695691702,
+      "signal": 0,
+      "signal_label": "flat",
+      "entry_reason_text": "No entry signal",
+      "has_position": false,
+      "position_side": null
+    },
+    {
+      "symbol": "VISL.NS",
+      "name": "Vedanta Iron & Steel",
+      "strategy": "trend_following",
+      "interval": "4h",
+      "group": "vedanta",
+      "bar_time": "2026-08-31 13:15:00+05:30",
+      "price": 36.97999954223633,
+      "atr": 1.0479422651878454,
+      "signal": 1,
+      "signal_label": "long",
+      "entry_reason_text": "Long: fast EMA(20) crossed above slow EMA(50) (trend following)",
+      "has_position": false,
+      "position_side": null
+    },
+    {
+      "symbol": "BHEL.NS",
+      "name": "BHEL",
+      "strategy": "trend_following",
+      "interval": "4h",
+      "group": "industrial",
+      "bar_time": "2026-08-31 13:15:00+05:30",
+      "price": 442.6499938964844,
+      "atr": 7.8075702041299015,
+      "signal": 1,
+      "signal_label": "long",
+      "entry_reason_text": "Long: fast EMA(20) crossed above slow EMA(50) (trend following)",
+      "has_position": false,
+      "position_side": null
+    }
+  ]
+}

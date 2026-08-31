@@ -3,7 +3,7 @@
 
 This script runs the paper trading session (updates data/paper_state.json),
 builds the analysis via src.paper_report.build_paper_analysis and writes
-docs/index.html (suitable for GitHub Pages) and docs/analysis.json.
+paper/index.html (suitable for GitHub Pages) and paper/analysis.json.
 """
 
 from __future__ import annotations
@@ -20,8 +20,8 @@ sys.path.insert(0, str(ROOT))
 from src.paper_trader import run_paper_session, STATE_FILE  # noqa: E402
 from src.paper_report import build_paper_analysis  # noqa: E402
 
-DOCS = ROOT / "docs"
-DOCS.mkdir(parents=True, exist_ok=True)
+PAPER_DIR = ROOT / "paper"
+PAPER_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def render_html(analysis: dict) -> str:
@@ -48,6 +48,9 @@ def render_html(analysis: dict) -> str:
     .controls { display:flex; gap:8px; align-items:center }
     input[type=search] { padding:6px 8px; border-radius:6px; border:1px solid #ddd }
     .download { padding:6px 10px; border-radius:6px; background:#0366d6; color:#fff; border:none }
+    .site-nav { display:flex; gap:16px; margin-bottom:12px; font-size:0.9rem }
+    .site-nav a { color:#0366d6; text-decoration:none }
+    .site-nav a:hover { text-decoration:underline }
     """
 
     def money(v):
@@ -88,6 +91,11 @@ def render_html(analysis: dict) -> str:
         "<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>",
         "</head>",
         "<body>",
+        "<nav class=\"site-nav\">",
+        "<a href=\"/\">← Bharat Scout</a>",
+        "<a href=\"/tracker/\">Portfolio Tracker</a>",
+        "<a href=\"/paper/\">Paper Dashboard</a>",
+        "</nav>",
         "<header>",
         f"<h1>{html.escape(title)}</h1>",
         f"<div class=\"meta\">Generated: {html.escape(str(gen))}</div>",
@@ -273,12 +281,12 @@ def main():
             # If anything fails, leave daily_equity as empty list
             analysis['daily_equity'] = []
 
-    # Persist JSON analysis for debugging
-    with (DOCS / "analysis.json").open("w", encoding="utf-8") as f:
+    # Persist JSON analysis for tracker page and GitHub MCP
+    with (PAPER_DIR / "analysis.json").open("w", encoding="utf-8") as f:
         json.dump({k: (v.isoformat() if hasattr(v, 'isoformat') else v) for k, v in analysis.items()}, f, default=str, indent=2)
 
     html_out = render_html(analysis)
-    with (DOCS / "index.html").open("w", encoding="utf-8") as f:
+    with (PAPER_DIR / "index.html").open("w", encoding="utf-8") as f:
         f.write(html_out)
 
     # Export DB trades to data/trades.json so future runs can reuse history
@@ -292,7 +300,8 @@ def main():
     except Exception:
         pass
 
-    print(f"Wrote dashboard to {DOCS / 'index.html'}")
+    print(f"Wrote dashboard to {PAPER_DIR / 'index.html'}")
+    print(f"Wrote analysis to {PAPER_DIR / 'analysis.json'}")
 
 
 if __name__ == '__main__':
