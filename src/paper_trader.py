@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 
 from config import MARKETS
+from src import settings
 from src.backtest import STRATEGY_MAP
 from src.data_loader import load_market_data
 from src.db import record_session_equity, record_trade, recent_trades, update_daily_pnl
@@ -352,6 +353,22 @@ def run_paper_session(*, refresh: bool = True) -> dict:
             f"ENTER {side} {m.name} @ Rs{price:.2f} qty={qty:.2f} "
             f"stop=Rs{stop:.2f}{mult_note} - {reason_text}"
         )
+        if settings.shadow_proposals_enabled():
+            from src.approvals.propose import propose_entry as shadow_propose
+
+            proposal = shadow_propose(
+                symbol=m.symbol,
+                side=signal,
+                quantity=qty,
+                price=price,
+                stop_price=stop,
+                reason=reason_text,
+                strategy=m.strategy,
+                source="paper_shadow",
+            )
+            actions.append(
+                f"  ↳ Shadow live proposal queued for review (id={proposal['id'][:8]}…)"
+            )
 
     equity = portfolio_equity(portfolio, prices)
     unrealized = sum(

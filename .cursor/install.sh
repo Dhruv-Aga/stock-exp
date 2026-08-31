@@ -22,3 +22,6 @@ fi
 if [ ! -f server/.env ]; then
   cp server/.env.example server/.env
 fi
+
+# Keep server proxy in sync with root .env
+bash "$(dirname "$0")/../scripts/sync_env.sh"

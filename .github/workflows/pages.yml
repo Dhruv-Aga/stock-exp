@@ -1,8 +1,7 @@
 name: Deploy static frontend to GitHub Pages
 
-# This workflow is kept for manual deployments only to avoid colliding with the scheduled
-# daily-report workflow which already uploads and deploys the Pages artifact.
-# It will not run on push events to prevent double-deploys that overwrite each other.
+# Manual fallback deploy. The scheduled daily-report workflow is the primary
+# Pages deployer (repo root: Bharat Scout + /tracker/ + /paper/).
 on:
   workflow_dispatch:
 

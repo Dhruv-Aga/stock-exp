@@ -143,6 +143,11 @@ class KiteClient:
       return {}
     return self._kite.margins()
 
+  def profile(self) -> dict:
+    if self.dry_run or not self._kite:
+      return {}
+    return self._kite.profile()
+
   def place_order(
     self,
     *,

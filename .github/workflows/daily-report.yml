@@ -53,8 +53,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${{ secrets.GH_PAGES_DEPLOY_TOKEN || secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" || true
-          git add data/paper_state.json data/trades.json || true
-          git commit -m "Auto: update paper state and trades [ci skip]" || echo "No changes to commit"
+          git add paper/ data/paper_state.json data/trades.json || true
+          git commit -m "Auto: update paper portfolio snapshot [ci skip]" || echo "No changes to commit"
           git push origin HEAD:main || echo "Push to main failed"
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAGES_DEPLOY_TOKEN || secrets.GITHUB_TOKEN }}
@@ -62,10 +62,10 @@ jobs:
       - name: Configure Pages (for docs deploy)
         uses: actions/configure-pages@v5
 
-      - name: Upload pages artifact (docs)
+      - name: Upload pages artifact (full static site)
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs
+          path: .
 
       - name: Deploy to GitHub Pages
         id: deploy

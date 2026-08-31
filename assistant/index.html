@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ask — Bharat Scout</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="./assistant.css" />
+    <link rel="stylesheet" href="../src/shell/shell.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div id="shell-nav"></div>
+      <div id="shell-status"></div>
+
+      <header class="header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">🤖</div>
+          <div>
+            <a class="header-back" href="/">← Trading Home</a>
+            <h1>Ask</h1>
+            <p class="sub" id="agentStatus">Connecting to agent…</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="assistant-layout">
+        <section class="card assistant-chat" aria-label="Chat">
+          <div class="assistant-prompts" id="quickPrompts">
+            <button class="prompt-chip" type="button" data-prompt="How is my portfolio performing?">
+              How is my portfolio?
+            </button>
+            <button class="prompt-chip" type="button" data-prompt="Show today's strategy signals for all configured tickers.">
+              Today's signals
+            </button>
+            <button class="prompt-chip" type="button" data-prompt="Compare my paper portfolio performance vs Rs 1 lakh starting capital.">
+              Compare vs Rs 1 lakh
+            </button>
+            <button class="prompt-chip" type="button" data-prompt="List any pending live trade proposals.">
+              Pending trades
+            </button>
+          </div>
+          <div class="chat-messages" id="chatMessages"></div>
+          <form class="chat-form" id="chatForm">
+            <textarea
+              id="chatInput"
+              rows="2"
+              placeholder="Ask about your portfolio, run a strategy, or benchmark performance…"
+              required
+            ></textarea>
+            <button class="btn-primary" type="submit" id="sendBtn">Send</button>
+          </form>
+        </section>
+
+        <aside class="card assistant-sidebar">
+          <h2>Capabilities</h2>
+          <p class="sub">The assistant picks tools automatically based on your question.</p>
+          <div id="capabilityGroups"></div>
+          <div class="assistant-hint">
+            <strong>Live trades:</strong> assistant can propose only — you review at
+            <a href="/approvals/">Review</a><br />
+            <strong>Start:</strong> <code>./scripts/dev.sh start</code>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script type="module">
+      import { initShell } from "../src/shell/init.js";
+      initShell({ page: "assistant" });
+    </script>
+    <script type="module" src="./assistant.js"></script>
+  </body>
+</html>

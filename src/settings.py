@@ -81,3 +81,18 @@ def groq_model() -> str:
 
 def llm_risk_governor_enabled() -> bool:
     return _bool("LLM_RISK_GOVERNOR", True)
+
+
+def require_trade_approval() -> bool:
+    """When True, live trades require explicit user approval before Kite execution."""
+    return _bool("REQUIRE_TRADE_APPROVAL", True)
+
+
+def auto_approve_trades() -> bool:
+    """When True, live proposals are executed immediately (audit trail kept)."""
+    return _bool("AUTO_APPROVE_TRADES", False)
+
+
+def shadow_proposals_enabled() -> bool:
+    """When True, paper sessions create shadow proposals for live review."""
+    return _bool("SHADOW_LIVE_PROPOSALS", True)

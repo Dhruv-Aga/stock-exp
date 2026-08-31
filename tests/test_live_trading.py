@@ -11,12 +11,43 @@ from src.broker.order_manager import OrderManager, TradeIntent
 from src.broker.symbol_map import can_trade_side, kite_tradingsymbol, round_quantity
 from src.db import init_db, recent_orders, record_order, record_trade, recent_trades
 from src.safety import is_market_open, kill_switch_active
-from src.settings import dry_run_mode, load_settings
+from src.settings import auto_approve_trades, dry_run_mode, load_settings
 
 
 def test_dry_run_mode_default():
     load_settings()
     assert dry_run_mode() is True
+
+
+def test_auto_approve_trades_default(monkeypatch):
+    monkeypatch.delenv("AUTO_APPROVE_TRADES", raising=False)
+    load_settings()
+    assert auto_approve_trades() is False
+
+
+def test_auto_approve_trades_enabled(monkeypatch):
+    monkeypatch.setenv("AUTO_APPROVE_TRADES", "true")
+    load_settings()
+    assert auto_approve_trades() is True
+
+
+def test_paper_shadow_skips_auto_execute(monkeypatch, tmp_path):
+    monkeypatch.setenv("AUTO_APPROVE_TRADES", "true")
+    monkeypatch.setenv("LIVE_TRADING", "true")
+    monkeypatch.setattr("src.db.DB_PATH", tmp_path / "test.db")
+    load_settings()
+    from src.approvals.propose import propose_entry
+
+    proposal = propose_entry(
+        symbol="VEDL.NS",
+        side=1,
+        quantity=1,
+        price=100,
+        stop_price=95,
+        reason="shadow test",
+        source="paper_shadow",
+    )
+    assert proposal["status"] == "pending"
 
 
 def test_symbol_mapping():
