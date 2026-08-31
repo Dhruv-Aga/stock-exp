@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""FastAPI server for the in-app trading assistant."""
+"""FastAPI server for the in-app trading assistant and approval workflow."""
 
 from __future__ import annotations
 
@@ -9,16 +9,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from src import settings
 from src.agent.chat import list_available_tools, run_agent_chat
+from src.approvals.executor import approve_and_execute
+from src.approvals.store import list_proposals, pending_count, reject_proposal
 
 settings.load_settings()
 
-app = FastAPI(title="Bharat Scout Trading Assistant", version="1.0.0")
+app = FastAPI(title="Bharat Scout Trading Assistant", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,12 +40,19 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage] = Field(default_factory=list)
 
 
+class RejectRequest(BaseModel):
+    note: str = ""
+
+
 @app.get("/api/agent/health")
 def health():
     return {
         "ok": True,
         "groq_configured": bool(settings.groq_api_key()),
         "kite_configured": settings.kite_configured(),
+        "live_trading": not settings.dry_run_mode(),
+        "require_trade_approval": settings.require_trade_approval(),
+        "pending_proposals": pending_count(),
         "tools_count": len(list_available_tools()),
     }
 
@@ -57,7 +66,36 @@ def tools():
 def chat(request: ChatRequest):
     messages = [m.model_dump() for m in request.messages]
     result = run_agent_chat(messages)
+    result["pending_proposals"] = pending_count()
     return result
+
+
+@app.get("/api/approvals")
+def approvals_list(status: str = "pending"):
+    st = None if status == "all" else status
+    return {
+        "proposals": list_proposals(status=st, limit=50),
+        "pending_count": pending_count(),
+        "require_trade_approval": settings.require_trade_approval(),
+    }
+
+
+@app.post("/api/approvals/{proposal_id}/approve")
+def approvals_approve(proposal_id: str):
+    """User explicitly approves and executes a live trade. Not callable by the LLM."""
+    try:
+        result = approve_and_execute(proposal_id)
+        return result
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/approvals/{proposal_id}/reject")
+def approvals_reject(proposal_id: str, body: RejectRequest):
+    try:
+        return reject_proposal(proposal_id, note=body.note)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 if __name__ == "__main__":

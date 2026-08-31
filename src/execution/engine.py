@@ -24,6 +24,7 @@ from src.risk import (
     portfolio_equity,
 )
 from src.safety import SafetyHalt, check_can_trade, is_market_open
+from src.approvals.propose import propose_entry, propose_exit
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,10 @@ def run_live_session(*, refresh: bool = True, force: bool = False) -> str:
         _sync_broker_positions(client, portfolio)
 
     cash_only = settings.cash_only_mode()
+    needs_approval = (
+        not settings.dry_run_mode()
+        and settings.require_trade_approval()
+    )
 
     for m in MARKETS:
         df = load_market_data(
@@ -154,13 +159,28 @@ def run_live_session(*, refresh: bool = True, force: bool = False) -> str:
                     stop_price=pos.stop_price,
                     reason="stop_loss",
                 )
-                result = orders.exit(intent, position_side=pos.side)
-                pnl = (exit_price - pos.entry_price) * pos.quantity * pos.side
-                _close_local(portfolio, m.symbol, exit_price, ts, "stop_loss", pnl)
-                update_daily_pnl(realized_delta=pnl)
-                actions.append(
-                    f"STOP {m.name} [{result.status}] order={result.order_id} P&L Rs{pnl:,.0f}"
-                )
+                if needs_approval:
+                    proposal = propose_exit(
+                        symbol=m.symbol,
+                        side=pos.side,
+                        quantity=pos.quantity,
+                        price=exit_price,
+                        reason="stop_loss",
+                        strategy=m.strategy,
+                        source="automation",
+                    )
+                    actions.append(
+                        f"PROPOSED STOP {m.name} — awaiting your approval "
+                        f"(id={proposal['id'][:8]}…)"
+                    )
+                else:
+                    result = orders.exit(intent, position_side=pos.side)
+                    pnl = (exit_price - pos.entry_price) * pos.quantity * pos.side
+                    _close_local(portfolio, m.symbol, exit_price, ts, "stop_loss", pnl)
+                    update_daily_pnl(realized_delta=pnl)
+                    actions.append(
+                        f"STOP {m.name} [{result.status}] order={result.order_id} P&L Rs{pnl:,.0f}"
+                    )
                 pos = None
 
         # Signal exit
@@ -173,13 +193,28 @@ def run_live_session(*, refresh: bool = True, force: bool = False) -> str:
                 stop_price=pos.stop_price,
                 reason="signal_exit",
             )
-            result = orders.exit(intent, position_side=pos.side)
-            pnl = (price - pos.entry_price) * pos.quantity * pos.side
-            _close_local(portfolio, m.symbol, price, ts, "signal_exit", pnl)
-            update_daily_pnl(realized_delta=pnl)
-            actions.append(
-                f"EXIT {m.name} [{result.status}] order={result.order_id} P&L Rs{pnl:,.0f}"
-            )
+            if needs_approval:
+                proposal = propose_exit(
+                    symbol=m.symbol,
+                    side=pos.side,
+                    quantity=pos.quantity,
+                    price=price,
+                    reason="signal_exit",
+                    strategy=m.strategy,
+                    source="automation",
+                )
+                actions.append(
+                    f"PROPOSED EXIT {m.name} — awaiting your approval "
+                    f"(id={proposal['id'][:8]}…)"
+                )
+            else:
+                result = orders.exit(intent, position_side=pos.side)
+                pnl = (price - pos.entry_price) * pos.quantity * pos.side
+                _close_local(portfolio, m.symbol, price, ts, "signal_exit", pnl)
+                update_daily_pnl(realized_delta=pnl)
+                actions.append(
+                    f"EXIT {m.name} [{result.status}] order={result.order_id} P&L Rs{pnl:,.0f}"
+                )
             pos = None
 
         # New entry
@@ -204,16 +239,33 @@ def run_live_session(*, refresh: bool = True, force: bool = False) -> str:
                 stop_price=stop,
                 reason="signal_entry",
             )
-            result = orders.enter(intent)
-            if result.status in ("PLACED", "DRY_RUN"):
-                _open_local(portfolio, m, signal, price, qty, stop, ts)
+            if needs_approval:
+                proposal = propose_entry(
+                    symbol=m.symbol,
+                    side=signal,
+                    quantity=qty,
+                    price=price,
+                    stop_price=stop,
+                    reason="signal_entry",
+                    strategy=m.strategy,
+                    source="automation",
+                )
                 side = "LONG" if signal == 1 else "SHORT"
                 actions.append(
-                    f"ENTER {side} {m.name} [{result.status}] order={result.order_id} "
-                    f"qty={qty:.0f} stop=Rs{stop:.2f}"
+                    f"PROPOSED {side} {m.name} qty={qty:.0f} stop=Rs{stop:.2f} — "
+                    f"awaiting your approval (id={proposal['id'][:8]}…)"
                 )
             else:
-                actions.append(f"FAILED entry {m.name}: {result.message}")
+                result = orders.enter(intent)
+                if result.status in ("PLACED", "DRY_RUN"):
+                    _open_local(portfolio, m, signal, price, qty, stop, ts)
+                    side = "LONG" if signal == 1 else "SHORT"
+                    actions.append(
+                        f"ENTER {side} {m.name} [{result.status}] order={result.order_id} "
+                        f"qty={qty:.0f} stop=Rs{stop:.2f}"
+                    )
+                else:
+                    actions.append(f"FAILED entry {m.name}: {result.message}")
 
     _save_state(portfolio)
     return _format_report(mode, portfolio, prices, actions, client)

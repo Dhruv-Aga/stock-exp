@@ -15,6 +15,7 @@ Bharat Scout is a responsive NSE watchlist and value screener that can be hosted
 | `/tracker/` | Portfolio tracker (loads `paper/analysis.json`) |
 | `/paper/` | Full paper trading dashboard |
 | `/assistant/` | In-app LLM assistant with Kite + strategy tools |
+| `/approvals/` | Approve live trades before Kite execution |
 
 ## Project structure
 
@@ -58,6 +59,14 @@ Then open:
 - <http://localhost:8080/paper/> — paper dashboard
 - <http://localhost:8080/assistant/> — in-app LLM assistant
 
+## Product: paper first, live with approval
+
+1. **Paper trading** — strategies run automatically on simulated Rs 1,00,000 capital.
+2. **Shadow proposals** — each paper entry can queue a preview of what live would do.
+3. **Live trading** — when `LIVE_TRADING=true`, automation creates proposals; **you approve at `/approvals/`** before any real Kite order.
+
+The assistant can analyze your portfolio and propose trades. It **cannot** approve or execute live orders for you.
+
 ## In-app trading assistant
 
 The assistant at `/assistant/` uses **Groq + tool calling** to answer questions about your portfolio, run strategies, and benchmark performance.
@@ -65,9 +74,9 @@ The assistant at `/assistant/` uses **Groq + tool calling** to answer questions 
 1. Set `GROQ_API_KEY` in `.env` for the LLM.
 2. Set `KITE_*` credentials for live portfolio tools (same surface as Kite MCP).
 3. Start `python3 run_agent_api.py` (port 8000).
-4. Open `/assistant/` and ask questions like "What's my portfolio P&L?" or "Run mean reversion on VEDL".
+4. Open `/assistant/` for chat, `/approvals/` to review live trade proposals.
 
-Custom scripts go in `scripts/sandbox/` and can be invoked via `run_python_script` / `run_node_script` tools.
+Custom scripts go in `scripts/sandbox/`.
 
 See [`AGENTS.md`](AGENTS.md) for the full tool list.
 

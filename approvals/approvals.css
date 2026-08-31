@@ -1,0 +1,77 @@
+.approval-banner {
+  margin-bottom: 20px;
+  border: 1px solid rgba(251, 146, 60, 0.35);
+  background: rgba(251, 146, 60, 0.1);
+}
+
+.approval-banner p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.approval-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.approval-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.approval-card h3 {
+  font-size: 16px;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.approval-meta {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.approval-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.approval-actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.btn-approve {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #111;
+}
+
+.btn-reject {
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.source-tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+}
+
+.empty-approvals {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+}

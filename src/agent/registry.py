@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any, Callable
 
-from src.agent.tools import benchmark, kite_tools, scripts, strategies, tickers
+from src.agent.tools import benchmark, kite_tools, proposals, scripts, strategies, tickers
 
 ToolHandler = Callable[[dict[str, Any]], Any]
 
@@ -29,6 +29,10 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "run_portfolio_backtest": benchmark.run_portfolio_backtest,
     "get_rolling_benchmark": benchmark.get_rolling_benchmark,
     "compare_portfolio_to_capital": benchmark.compare_portfolio_to_capital,
+    # Trade proposals (human approval required before live execution)
+    "propose_trade": proposals.propose_trade,
+    "list_trade_proposals": proposals.list_trade_proposals,
+    "get_trade_proposal": proposals.get_trade_proposal,
     # Script runner
     "run_python_script": scripts.run_python_script,
     "run_node_script": scripts.run_node_script,
@@ -227,6 +231,59 @@ def tool_schemas() -> list[dict[str, Any]]:
                             "default": "paper",
                         },
                     },
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "propose_trade",
+                "description": "Queue a live trade for user approval. Does NOT execute on Kite. User must approve at /approvals/.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "action": {"type": "string", "enum": ["enter", "exit"]},
+                        "symbol": {"type": "string"},
+                        "side": {"type": "string", "enum": ["long", "short"]},
+                        "quantity": {"type": "number"},
+                        "price": {"type": "number"},
+                        "stop_price": {"type": "number"},
+                        "reason": {"type": "string"},
+                        "strategy": {"type": "string"},
+                    },
+                    "required": ["action", "symbol", "side", "quantity"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "list_trade_proposals",
+                "description": "List trade proposals awaiting or past user approval. Assistant cannot approve trades.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "status": {
+                            "type": "string",
+                            "enum": ["pending", "approved", "rejected", "executed", "expired", "all"],
+                            "default": "pending",
+                        },
+                        "limit": {"type": "integer", "default": 20},
+                    },
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_trade_proposal",
+                "description": "Get details of a single trade proposal by ID.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "proposal_id": {"type": "string"},
+                    },
+                    "required": ["proposal_id"],
                 },
             },
         },

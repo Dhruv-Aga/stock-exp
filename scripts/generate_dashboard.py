@@ -96,6 +96,7 @@ def render_html(analysis: dict) -> str:
         "<a href=\"/tracker/\">Portfolio Tracker</a>",
         "<a href=\"/paper/\">Paper Dashboard</a>",
         "<a href=\"/assistant/\">Assistant</a>",
+        "<a href=\"/approvals/\">Approvals</a>",
         "</nav>",
         "<header>",
         f"<h1>{html.escape(title)}</h1>",

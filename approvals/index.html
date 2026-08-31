@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trade Approvals — Bharat Scout</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="./approvals.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="site-nav" aria-label="Main">
+        <a href="/">Screener</a>
+        <a href="/tracker/">Portfolio Tracker</a>
+        <a href="/paper/">Paper Dashboard</a>
+        <a href="/assistant/">Assistant</a>
+        <a href="/approvals/" aria-current="page">Approvals</a>
+      </nav>
+
+      <header class="header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">✅</div>
+          <div>
+            <h1>Trade Approvals</h1>
+            <p class="sub" id="approvalStatus">Review before any live order hits Kite</p>
+          </div>
+        </div>
+      </header>
+
+      <div class="approval-banner card">
+        <strong>Human approval required</strong>
+        <p>
+          Paper trading runs automatically. Live trades on your Zerodha account are
+          <em>never</em> placed until you approve them here. The assistant can propose
+          trades but cannot approve them for you.
+        </p>
+      </div>
+
+      <main class="approval-list card" id="proposalList">
+        <p class="sub">Loading proposals…</p>
+      </main>
+    </div>
+
+    <script type="module" src="./approvals.js"></script>
+  </body>
+</html>
