@@ -23,81 +23,81 @@
       <div id="shell-status"></div>
       <div id="shell-onboarding"></div>
 
+      <div class="offline-banner hidden" id="offlineBanner">
+        Agent API offline — read-only paper data shown. Start services with
+        <code>./scripts/dev.sh start</code>
+      </div>
+
       <header class="header">
         <div class="brand">
           <div class="logo" aria-hidden="true">🏠</div>
           <div>
             <h1>Trading Home</h1>
-            <p class="sub">Paper trading, portfolio, assistant, and live approvals</p>
+            <p class="sub" id="homeSubtitle">Monitor · Review · Ask</p>
           </div>
-        </div>
-        <div class="top-actions">
-          <a class="btn-secondary" href="/assistant/">Ask assistant</a>
         </div>
       </header>
 
-      <div class="approval-banner card hidden" id="pendingBanner"></div>
+      <div class="action-required-card hidden" id="pendingBanner"></div>
 
       <section class="home-kpis" id="homeKpis" aria-label="Portfolio summary"></section>
 
+      <section class="card" id="signalsSection">
+        <div class="section-title">
+          <h2>Today's signals</h2>
+          <p class="sub" id="signalsUpdated">Loading…</p>
+        </div>
+        <div class="table-wrap signals-table" id="signalsTable"></div>
+      </section>
+
       <section class="home-grid" aria-label="Quick actions">
-        <a class="home-card" href="/portfolio/">
-          <span class="icon">📊</span>
-          <h3>Portfolio</h3>
-          <p>Paper equity, positions, and trade history</p>
+        <a class="home-card" href="/approvals/">
+          <span class="icon">✅</span>
+          <h3>Review trades</h3>
+          <p>Approve or reject live proposals before Kite execution</p>
         </a>
         <a class="home-card" href="/assistant/">
           <span class="icon">🤖</span>
-          <h3>Assistant</h3>
-          <p>Ask about holdings, run strategies, benchmark</p>
+          <h3>Ask assistant</h3>
+          <p>Portfolio analysis, strategies, and benchmarking</p>
         </a>
-        <a class="home-card" href="/approvals/">
-          <span class="icon">✅</span>
-          <h3>Approvals</h3>
-          <p>Review live trade proposals before Kite execution</p>
+        <a class="home-card" href="/portfolio/">
+          <span class="icon">📊</span>
+          <h3>View portfolio</h3>
+          <p>Equity, positions, and full paper dashboard</p>
         </a>
         <a class="home-card" href="/screener/">
           <span class="icon">📈</span>
-          <h3>Screener</h3>
-          <p>NSE watchlist and value filters</p>
+          <h3>Research stocks</h3>
+          <p>NSE watchlist and value screener</p>
         </a>
       </section>
 
       <section class="card">
-        <h2>Local commands</h2>
-        <p class="sub">One config file (<code>.env</code>) and one launcher script.</p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Command</th>
-                <th>What it does</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>./scripts/dev.sh setup</code></td>
-                <td>First-time install, sync config, health check</td>
-              </tr>
-              <tr>
-                <td><code>./scripts/dev.sh start</code></td>
-                <td>Start agent API + frontend</td>
-              </tr>
-              <tr>
-                <td><code>./scripts/dev.sh paper</code></td>
-                <td>Run paper session and refresh portfolio</td>
-              </tr>
-              <tr>
-                <td><code>./scripts/dev.sh status</code></td>
-                <td>Show what's running</td>
-              </tr>
-            </tbody>
-          </table>
+        <h2>Getting started</h2>
+        <p class="sub">Three steps: monitor paper performance, review proposals when ready, ask the assistant for analysis.</p>
+        <div class="journey-steps">
+          <a class="journey-step" href="/portfolio/">
+            <strong>1. Monitor</strong>
+            <p>Check paper equity and positions on Portfolio.</p>
+          </a>
+          <a class="journey-step" href="/approvals/">
+            <strong>2. Review</strong>
+            <p>Approve shadow or live proposals when you're confident.</p>
+          </a>
+          <a class="journey-step" href="/assistant/">
+            <strong>3. Ask</strong>
+            <p>Use the assistant — it never auto-executes live trades.</p>
+          </a>
         </div>
+        <p class="sub" style="margin-top: 14px">
+          Config: <code>GROQ_API_KEY</code>, <code>KITE_*</code> in <code>.env</code> ·
+          <code>./scripts/dev.sh start</code>
+        </p>
       </section>
 
       <footer class="footer">
-        Bharat Scout • See <code>LOCAL.md</code> for setup • <code>python3 check_setup.py</code> for diagnostics
+        Bharat Scout · <code>LOCAL.md</code> · <code>python3 check_setup.py</code>
       </footer>
     </div>
 

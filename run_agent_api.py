@@ -104,6 +104,9 @@ def trading_summary():
             "open_positions": len(open_positions),
             "generated_at": analysis.get("generated_at"),
         },
+        "signals": analysis.get("signals") or [],
+        "session_actions": analysis.get("session_actions") or [],
+        "mode": "live" if not settings.dry_run_mode() else "paper",
         "setup": {
             "env_file": (ROOT / ".env").exists(),
             "paper_snapshot": (ROOT / "paper" / "analysis.json").exists(),

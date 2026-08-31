@@ -4,6 +4,14 @@ const listEl = document.querySelector("#proposalList");
 const statusEl = document.querySelector("#approvalStatus");
 const bannerEl = document.querySelector(".approval-banner");
 
+const SOURCE_LABELS = {
+  paper_shadow: "Paper shadow previews",
+  automation: "Strategy automation",
+  assistant: "Assistant proposals",
+};
+
+const SOURCE_ORDER = ["paper_shadow", "automation", "assistant"];
+
 function escapeHtml(v) {
   return String(v)
     .replaceAll("&", "&amp;")
@@ -33,6 +41,40 @@ function formatProposal(p) {
     </article>`;
 }
 
+function groupProposals(proposals) {
+  const groups = new Map();
+  for (const p of proposals) {
+    const key = p.source || "other";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(p);
+  }
+
+  const ordered = [];
+  for (const key of SOURCE_ORDER) {
+    if (groups.has(key)) {
+      ordered.push([key, groups.get(key)]);
+      groups.delete(key);
+    }
+  }
+  for (const [key, items] of groups) {
+    ordered.push([key, items]);
+  }
+  return ordered;
+}
+
+function renderGrouped(proposals) {
+  const groups = groupProposals(proposals);
+  return groups
+    .map(
+      ([source, items]) => `
+      <div class="proposal-group">
+        <h3>${escapeHtml(SOURCE_LABELS[source] || source)}</h3>
+        ${items.map(formatProposal).join("")}
+      </div>`
+    )
+    .join("");
+}
+
 async function loadProposals() {
   try {
     const healthRes = await fetch(agentUrl("/api/agent/health"));
@@ -42,9 +84,8 @@ async function loadProposals() {
         bannerEl.innerHTML = `
           <strong>Auto-approve enabled</strong>
           <p>
-            <code>AUTO_APPROVE_TRADES=true</code> in <code>.env</code> — live proposals from
-            automation and the assistant execute on Kite immediately. Paper shadow proposals
-            still require manual review here.
+            <code>AUTO_APPROVE_TRADES=true</code> — live proposals from automation and the assistant
+            execute immediately. Paper shadow previews still appear here for review.
           </p>`;
       }
     }
@@ -54,12 +95,16 @@ async function loadProposals() {
     statusEl.textContent = `${data.pending_count} pending · approval required before live trades`;
 
     if (!data.proposals?.length) {
-      listEl.innerHTML =
-        '<div class="empty-approvals"><p>No pending trade proposals.</p><p class="sub">Paper trading continues automatically. Live proposals from automation or the assistant will appear here.</p></div>';
+      listEl.innerHTML = `
+        <div class="empty-approvals">
+          <p>No pending trade proposals.</p>
+          <p class="sub">Paper is running — shadow and live proposals appear here when strategies signal.</p>
+          <p class="sub"><a href="/">← Back to Trading Home</a> · <a href="/portfolio/">View portfolio</a></p>
+        </div>`;
       return;
     }
 
-    listEl.innerHTML = data.proposals.map(formatProposal).join("");
+    listEl.innerHTML = renderGrouped(data.proposals);
   } catch (error) {
     listEl.innerHTML = `<p class="sub">Could not load proposals: ${escapeHtml(error.message)}. Run <code>./scripts/dev.sh start</code></p>`;
   }

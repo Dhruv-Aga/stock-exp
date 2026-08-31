@@ -264,9 +264,15 @@ document.querySelectorAll(".portfolio-tab").forEach((btn) => {
 });
 
 const params = new URLSearchParams(window.location.search);
-if (params.get("tab") === "details") {
+if (params.get("tab") === "details" || window.location.hash === "#details") {
   setTab("details");
 }
+
+window.addEventListener("hashchange", () => {
+  if (window.location.hash === "#details") {
+    setTab("details");
+  }
+});
 
 elements.refreshPaperBtn?.addEventListener("click", () => {
   loadPortfolio();

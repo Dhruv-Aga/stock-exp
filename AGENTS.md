@@ -52,15 +52,21 @@ The assistant can **propose** trades and analyze portfolios. It **cannot approve
 
 ## Web UI routes
 
-| Route | Page |
+| Route | Task |
 |-------|------|
-| `/` | Trading home (status, quick actions, setup checklist) |
-| `/portfolio/` | Portfolio overview + full paper dashboard |
-| `/screener/` | Stock screener |
-| `/assistant/` | LLM chat with tools |
-| `/approvals/` | Approve/reject live trades |
+| `/` | Trading home — status, signals, setup checklist |
+| `/portfolio/` | Monitor — overview + full paper dashboard |
+| `/approvals/` | Review — approve/reject live trades |
+| `/assistant/` | Ask — LLM chat with tools |
+| `/screener/` | Research — stock screener |
 
-Legacy `/tracker/` redirects to `/portfolio/`.
+Legacy `/tracker/` → `/portfolio/`. `/paper/` → `/portfolio/#details` when not embedded.
+
+## User journey
+
+1. **Monitor** — check paper performance at `/` and `/portfolio/`.
+2. **Review** — approve proposals at `/approvals/` when ready for live.
+3. **Ask** — use `/assistant/` for analysis (never auto-executes live trades).
 
 ## Local development
 

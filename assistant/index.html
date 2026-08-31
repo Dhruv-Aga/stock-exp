@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Trading Assistant — Bharat Scout</title>
+    <title>Ask — Bharat Scout</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -23,7 +23,8 @@
         <div class="brand">
           <div class="logo" aria-hidden="true">🤖</div>
           <div>
-            <h1>Trading Assistant</h1>
+            <a class="header-back" href="/">← Trading Home</a>
+            <h1>Ask</h1>
             <p class="sub" id="agentStatus">Connecting to agent…</p>
           </div>
         </div>
@@ -32,14 +33,14 @@
       <main class="assistant-layout">
         <section class="card assistant-chat" aria-label="Chat">
           <div class="assistant-prompts" id="quickPrompts">
-            <button class="prompt-chip" type="button" data-prompt="What are my current holdings and positions?">
-              Holdings
+            <button class="prompt-chip" type="button" data-prompt="How is my portfolio performing?">
+              How is my portfolio?
             </button>
-            <button class="prompt-chip" type="button" data-prompt="Run all strategy signals on my configured tickers.">
-              Strategy signals
+            <button class="prompt-chip" type="button" data-prompt="Show today's strategy signals for all configured tickers.">
+              Today's signals
             </button>
-            <button class="prompt-chip" type="button" data-prompt="How is my paper portfolio performing vs benchmark?">
-              Benchmark
+            <button class="prompt-chip" type="button" data-prompt="Compare my paper portfolio performance vs Rs 1 lakh starting capital.">
+              Compare vs Rs 1 lakh
             </button>
             <button class="prompt-chip" type="button" data-prompt="List any pending live trade proposals.">
               Pending trades
@@ -58,13 +59,13 @@
         </section>
 
         <aside class="card assistant-sidebar">
-          <h2>Available tools</h2>
-          <p class="sub">The assistant can call these automatically based on your question.</p>
-          <ul class="tool-list" id="toolList"></ul>
+          <h2>Capabilities</h2>
+          <p class="sub">The assistant picks tools automatically based on your question.</p>
+          <div id="capabilityGroups"></div>
           <div class="assistant-hint">
-            <strong>Config:</strong> one <code>.env</code> at repo root<br />
-            <strong>Start:</strong> <code>./scripts/dev.sh start</code><br />
-            <strong>Live trades:</strong> approve at <a href="/approvals/">/approvals/</a>
+            <strong>Live trades:</strong> assistant can propose only — you review at
+            <a href="/approvals/">Review</a><br />
+            <strong>Start:</strong> <code>./scripts/dev.sh start</code>
           </div>
         </aside>
       </main>

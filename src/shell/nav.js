@@ -3,9 +3,9 @@
 export const NAV_ITEMS = [
   { id: "home", label: "Home", href: "/" },
   { id: "portfolio", label: "Portfolio", href: "/portfolio/" },
-  { id: "screener", label: "Screener", href: "/screener/" },
-  { id: "assistant", label: "Assistant", href: "/assistant/" },
-  { id: "approvals", label: "Approvals", href: "/approvals/", badgeKey: "pending_proposals" },
+  { id: "approvals", label: "Review", href: "/approvals/", badgeKey: "pending_proposals" },
+  { id: "assistant", label: "Ask", href: "/assistant/" },
+  { id: "screener", label: "Research", href: "/screener/", secondary: true },
 ];
 
 /**
@@ -22,6 +22,9 @@ export function mountNav(container, currentId, badges = {}) {
     const a = document.createElement("a");
     a.href = item.href;
     a.textContent = item.label;
+    if (item.secondary) {
+      a.classList.add("nav-secondary");
+    }
     if (item.id === currentId) {
       a.setAttribute("aria-current", "page");
     }

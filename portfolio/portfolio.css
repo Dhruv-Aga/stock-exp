@@ -1,0 +1,35 @@
+.portfolio-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.portfolio-tab {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.portfolio-tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(251, 146, 60, 0.08);
+}
+
+.portfolio-panel.hidden {
+  display: none;
+}
+
+.portfolio-details-frame {
+  width: 100%;
+  min-height: 80vh;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f6f8fa;
+}

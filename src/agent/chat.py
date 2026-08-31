@@ -97,7 +97,17 @@ def run_agent_chat(
                 name = tool_call.function.name
                 args_raw = tool_call.function.arguments or "{}"
                 result = execute_tool(name, args_raw)
-                tools_used.append({"tool": name, "arguments": args_raw, "result_preview": result[:500]})
+                entry: dict[str, Any] = {
+                    "tool": name,
+                    "arguments": args_raw,
+                    "result_preview": result[:500],
+                }
+                if name in ("propose_trade", "list_trade_proposals", "get_trade_proposal"):
+                    try:
+                        entry["result"] = json.loads(result)
+                    except json.JSONDecodeError:
+                        pass
+                tools_used.append(entry)
                 chat_messages.append(
                     {
                         "role": "tool",

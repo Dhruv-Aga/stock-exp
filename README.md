@@ -11,13 +11,19 @@ Bharat Scout is a responsive NSE watchlist and value screener that can be hosted
 
 | Route | Page |
 |-------|------|
-| `/` | Trading home (status strip, quick actions, setup checklist) |
-| `/portfolio/` | Portfolio overview + full paper dashboard |
-| `/screener/` | Bharat Scout stock screener |
-| `/assistant/` | In-app LLM assistant with Kite + strategy tools |
-| `/approvals/` | Approve live trades before Kite execution |
+| `/` | **Trading home** — status, signals, quick actions |
+| `/portfolio/` | **Monitor** — portfolio overview + full dashboard |
+| `/approvals/` | **Review** — approve/reject live trades |
+| `/assistant/` | **Ask** — LLM chat with tools |
+| `/screener/` | **Research** — NSE watchlist screener |
 
-Legacy routes `/tracker/` and `/paper/` redirect or embed from portfolio.
+Legacy `/tracker/` redirects to `/portfolio/`. `/paper/` redirects to `/portfolio/#details` when opened directly.
+
+## User journey
+
+1. **Monitor** — open `/`, check paper equity and signals; drill into `/portfolio/` if needed.
+2. **Review** — approve shadow or live proposals at `/approvals/` when ready.
+3. **Ask** — use `/assistant/` for analysis; it never auto-executes live trades.
 
 ## Project structure
 
@@ -70,10 +76,10 @@ This starts the **agent API** (`:8000`) and **frontend** (`:8080`) together. One
 Then open:
 
 - <http://localhost:8080/> — trading home
-- <http://localhost:8080/portfolio/> — portfolio
-- <http://localhost:8080/assistant/> — assistant
-- <http://localhost:8080/approvals/> — approve live trades
-- <http://localhost:8080/screener/> — screener
+- <http://localhost:8080/portfolio/> — monitor portfolio
+- <http://localhost:8080/approvals/> — review live trades
+- <http://localhost:8080/assistant/> — ask the assistant
+- <http://localhost:8080/screener/> — research stocks
 
 ## Product: paper first, live with approval
 
