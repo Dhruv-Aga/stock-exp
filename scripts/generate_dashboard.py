@@ -246,6 +246,33 @@ def main():
         analysis['recent_trades'] = saved_trades[-20:]
         analysis['total_closed_trades'] = len(saved_trades)
 
+    # If there's no daily_equity (no DB equity snapshots), derive a simple equity series
+    # from saved_trades so charts can render on ephemeral runners.
+    if (not analysis.get('daily_equity')) and saved_trades:
+        try:
+            trades_sorted = sorted(saved_trades, key=lambda t: t.get('exit_time') or '')
+            cum = 0.0
+            # Estimate starting equity from analysis: equity - total_pnl (falls back to 0)
+            start_equity = float(analysis.get('equity', 0)) - float(analysis.get('total_pnl', 0))
+            derived = []
+            for t in trades_sorted:
+                pnl = float(t.get('pnl') or 0)
+                cum += pnl
+                exit_time = str(t.get('exit_time') or '')
+                # normalize date portion
+                date_label = exit_time.split('T')[0] if 'T' in exit_time else exit_time.split(' ')[0] if exit_time else ''
+                derived.append({
+                    'date': date_label,
+                    'realized_pnl': pnl,
+                    'unrealized_pnl': 0.0,
+                    'equity': start_equity + cum,
+                })
+            # keep only the last 90 points
+            analysis['daily_equity'] = derived[-90:]
+        except Exception:
+            # If anything fails, leave daily_equity as empty list
+            analysis['daily_equity'] = []
+
     # Persist JSON analysis for debugging
     with (DOCS / "analysis.json").open("w", encoding="utf-8") as f:
         json.dump({k: (v.isoformat() if hasattr(v, 'isoformat') else v) for k, v in analysis.items()}, f, default=str, indent=2)
