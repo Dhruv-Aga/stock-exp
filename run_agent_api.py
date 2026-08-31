@@ -3,7 +3,11 @@
 
 from __future__ import annotations
 
+import json
+import os
 import sys
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -44,6 +48,25 @@ class RejectRequest(BaseModel):
     note: str = ""
 
 
+def _frontend_running() -> bool:
+    port = os.environ.get("FRONTEND_PORT", "8080")
+    try:
+        with urllib.request.urlopen(f"http://localhost:{port}/", timeout=1) as resp:
+            return resp.status == 200
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return False
+
+
+def _load_paper_analysis() -> dict:
+    path = ROOT / "paper" / "analysis.json"
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
 @app.get("/api/agent/health")
 def health():
     return {
@@ -54,6 +77,36 @@ def health():
         "require_trade_approval": settings.require_trade_approval(),
         "pending_proposals": pending_count(),
         "tools_count": len(list_available_tools()),
+    }
+
+
+@app.get("/api/trading/summary")
+def trading_summary():
+    analysis = _load_paper_analysis()
+    open_positions = analysis.get("open_positions") or []
+    return {
+        "agent": {
+            "online": True,
+            "groq_configured": bool(settings.groq_api_key()),
+            "kite_configured": settings.kite_configured(),
+            "live_trading": not settings.dry_run_mode(),
+            "require_trade_approval": settings.require_trade_approval(),
+            "pending_proposals": pending_count(),
+            "tools_count": len(list_available_tools()),
+        },
+        "portfolio": {
+            "equity": analysis.get("equity"),
+            "cash": analysis.get("cash"),
+            "unrealized_pnl": analysis.get("unrealized_pnl"),
+            "total_return_pct": analysis.get("total_return_pct"),
+            "open_positions": len(open_positions),
+            "generated_at": analysis.get("generated_at"),
+        },
+        "setup": {
+            "env_file": (ROOT / ".env").exists(),
+            "paper_snapshot": (ROOT / "paper" / "analysis.json").exists(),
+            "services_running": _frontend_running(),
+        },
     }
 
 
@@ -99,6 +152,8 @@ def approvals_reject(proposal_id: str, body: RejectRequest):
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
 
-    uvicorn.run("run_agent_api:app", host="0.0.0.0", port=8000, reload=False)
+    port = int(os.environ.get("AGENT_API_PORT", "8000"))
+    uvicorn.run("run_agent_api:app", host="0.0.0.0", port=port, reload=False)

@@ -11,53 +11,69 @@ Bharat Scout is a responsive NSE watchlist and value screener that can be hosted
 
 | Route | Page |
 |-------|------|
-| `/` | Bharat Scout screener |
-| `/tracker/` | Portfolio tracker (loads `paper/analysis.json`) |
-| `/paper/` | Full paper trading dashboard |
+| `/` | Trading home (status strip, quick actions, setup checklist) |
+| `/portfolio/` | Portfolio overview + full paper dashboard |
+| `/screener/` | Bharat Scout stock screener |
 | `/assistant/` | In-app LLM assistant with Kite + strategy tools |
 | `/approvals/` | Approve live trades before Kite execution |
+
+Legacy routes `/tracker/` and `/paper/` redirect or embed from portfolio.
 
 ## Project structure
 
 ```text
-index.html                    Bharat Scout screener (site root)
+index.html                    Trading home (site root)
+screener/index.html           Stock screener
+portfolio/                    Unified portfolio (overview + details tabs)
+src/shell/                    Shared nav, status strip, onboarding
 style.css                     Shared responsive UI
-tracker/                      Portfolio tracker subpage
 assistant/                    In-app LLM trading assistant (chat UI)
 src/agent/                    Agent tool registry, handlers, Groq chat loop
 run_agent_api.py              FastAPI agent server (port 8000)
+scripts/dev.sh                One-command local setup and launcher
 scripts/sandbox/              Custom Python/Node scripts for assistant
 paper/                        Generated paper dashboard + analysis.json
-src/app.js                    UI state, filters, watchlist, CSV export
+src/app.js                    Screener UI state, filters, watchlist
 src/api.js                    Demo quotes and backend quote client
 scripts/generate_dashboard.py Builds paper/ artifacts from trading bot
 server/server.js              Optional secure Kite proxy
 .github/workflows/daily-report.yml  Daily paper session + Pages deploy
 .cursor/mcp.json              Kite MCP configuration for agents
 AGENTS.md                     Agent instructions for portfolio checks
+LOCAL.md                      Local dev quick start
 ```
 
 ## Product requirements
 
 See [`docs/PRD.md`](docs/PRD.md) for the complete product requirements document.
 
-## Run locally
+## Run locally (one command)
 
-Because the app uses ES modules, serve it over HTTP instead of opening `index.html` with `file://`.
+See **[LOCAL.md](LOCAL.md)** for the full guide. Quick start:
 
 ```bash
-./.cursor/install.sh
-python3 scripts/generate_dashboard.py --no-refresh
-python3 run_agent_api.py &          # agent API on :8000
-python3 -m http.server 8080
+cp .env.example .env
+./scripts/dev.sh setup
+./scripts/dev.sh start
 ```
+
+This starts the **agent API** (`:8000`) and **frontend** (`:8080`) together. One `.env` file configures everything.
+
+| Command | What it does |
+|---------|----------------|
+| `./scripts/dev.sh setup` | Install deps, sync config, health check |
+| `./scripts/dev.sh start` | Run agent API + frontend |
+| `./scripts/dev.sh paper` | Paper trade session + refresh dashboard |
+| `./scripts/dev.sh status` | Show running services |
+| `./scripts/dev.sh stop` | Stop all |
 
 Then open:
 
-- <http://localhost:8080> — screener
-- <http://localhost:8080/tracker/> — portfolio tracker
-- <http://localhost:8080/paper/> — paper dashboard
-- <http://localhost:8080/assistant/> — in-app LLM assistant
+- <http://localhost:8080/> — trading home
+- <http://localhost:8080/portfolio/> — portfolio
+- <http://localhost:8080/assistant/> — assistant
+- <http://localhost:8080/approvals/> — approve live trades
+- <http://localhost:8080/screener/> — screener
 
 ## Product: paper first, live with approval
 
@@ -69,14 +85,7 @@ The assistant can analyze your portfolio and propose trades. It **cannot** appro
 
 ## In-app trading assistant
 
-The assistant at `/assistant/` uses **Groq + tool calling** to answer questions about your portfolio, run strategies, and benchmark performance.
-
-1. Set `GROQ_API_KEY` in `.env` for the LLM.
-2. Set `KITE_*` credentials for live portfolio tools (same surface as Kite MCP).
-3. Start `python3 run_agent_api.py` (port 8000).
-4. Open `/assistant/` for chat, `/approvals/` to review live trade proposals.
-
-Custom scripts go in `scripts/sandbox/`.
+Configured via `GROQ_API_KEY` in `.env`. Started automatically by `./scripts/dev.sh start`.
 
 See [`AGENTS.md`](AGENTS.md) for the full tool list.
 

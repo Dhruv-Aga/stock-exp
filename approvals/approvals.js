@@ -1,4 +1,4 @@
-const API = window.AGENT_API_URL || "http://localhost:8000";
+import { agentUrl } from "../src/shell/config.js";
 
 const listEl = document.querySelector("#proposalList");
 const statusEl = document.querySelector("#approvalStatus");
@@ -34,7 +34,7 @@ function formatProposal(p) {
 
 async function loadProposals() {
   try {
-    const res = await fetch(`${API}/api/approvals?status=pending`);
+    const res = await fetch(agentUrl("/api/approvals?status=pending"));
     const data = await res.json();
     statusEl.textContent = `${data.pending_count} pending · approval required before live trades`;
 
@@ -46,7 +46,7 @@ async function loadProposals() {
 
     listEl.innerHTML = data.proposals.map(formatProposal).join("");
   } catch (error) {
-    listEl.innerHTML = `<p class="sub">Could not load proposals: ${escapeHtml(error.message)}. Start the agent API with python3 run_agent_api.py</p>`;
+    listEl.innerHTML = `<p class="sub">Could not load proposals: ${escapeHtml(error.message)}. Run <code>./scripts/dev.sh start</code></p>`;
   }
 }
 
@@ -57,7 +57,7 @@ async function handleAction(id, action) {
     );
     if (!ok) return;
 
-    const res = await fetch(`${API}/api/approvals/${id}/approve`, { method: "POST" });
+    const res = await fetch(agentUrl(`/api/approvals/${id}/approve`), { method: "POST" });
     const data = await res.json();
     if (!res.ok) {
       alert(data.detail || "Approval failed");
@@ -65,7 +65,7 @@ async function handleAction(id, action) {
     }
     alert(`Trade executed: ${data.execution?.status || "done"}`);
   } else {
-    const res = await fetch(`${API}/api/approvals/${id}/reject`, {
+    const res = await fetch(agentUrl(`/api/approvals/${id}/reject`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ note: "Rejected by user" }),

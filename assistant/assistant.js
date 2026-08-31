@@ -1,4 +1,4 @@
-const AGENT_API = window.AGENT_API_URL || "http://localhost:8000";
+import { agentUrl } from "../src/shell/config.js";
 
 const elements = {
   chatMessages: document.querySelector("#chatMessages"),
@@ -27,7 +27,7 @@ function addBubble(role, text, extra = "") {
 
 async function loadHealth() {
   try {
-    const res = await fetch(`${AGENT_API}/api/agent/health`);
+    const res = await fetch(agentUrl("/api/agent/health"));
     const data = await res.json();
     const parts = [];
     parts.push(data.groq_configured ? "Groq ready" : "Groq not configured");
@@ -35,17 +35,17 @@ async function loadHealth() {
     parts.push(`${data.tools_count} tools`);
     elements.agentStatus.textContent = parts.join(" · ");
   } catch {
-    elements.agentStatus.textContent = "Agent API offline — start with: python3 run_agent_api.py";
+    elements.agentStatus.textContent = "Agent API offline — run: ./scripts/dev.sh start";
     addBubble(
       "system",
-      "Agent API is not running. Start it with: python3 run_agent_api.py (port 8000)"
+      "Agent API is not running. Start everything with: ./scripts/dev.sh start"
     );
   }
 }
 
 async function loadTools() {
   try {
-    const res = await fetch(`${AGENT_API}/api/agent/tools`);
+    const res = await fetch(agentUrl("/api/agent/tools"));
     const data = await res.json();
     elements.toolList.innerHTML = (data.tools || [])
       .map((t) => `<li><strong>${escapeHtml(t.name)}</strong>${escapeHtml(t.description)}</li>`)
@@ -70,7 +70,7 @@ async function sendMessage(text) {
   elements.chatInput.disabled = true;
 
   try {
-    const res = await fetch(`${AGENT_API}/api/agent/chat`, {
+    const res = await fetch(agentUrl("/api/agent/chat"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages: history }),
@@ -112,6 +112,12 @@ elements.chatInput.addEventListener("keydown", (event) => {
     event.preventDefault();
     elements.chatForm.requestSubmit();
   }
+});
+
+document.querySelector("#quickPrompts")?.addEventListener("click", (event) => {
+  const chip = event.target.closest("[data-prompt]");
+  if (!chip) return;
+  sendMessage(chip.dataset.prompt);
 });
 
 addBubble(
