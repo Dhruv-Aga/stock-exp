@@ -47,6 +47,25 @@ jobs:
       - name: Run daily report & generate dashboard
         run: |
           python scripts/generate_dashboard.py --refresh
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+
+      - name: Email daily report
+        if: ${{ secrets.SMTP_HOST != '' && secrets.SMTP_USER != '' && secrets.SMTP_PASSWORD != '' && secrets.EMAIL_TO != '' }}
+        run: |
+          python run_daily_report.py --email --no-refresh
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
 
       - name: Commit paper state to main (if changed)
         run: |
