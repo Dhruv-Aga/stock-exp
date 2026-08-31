@@ -107,6 +107,8 @@ See [`AGENTS.md`](AGENTS.md) for the full tool list.
 4. The **Daily paper trading report** workflow runs on weekdays, updates `paper/analysis.json`, and deploys the full static site.
 5. For a one-off manual deploy, run **Deploy static frontend to GitHub Pages**.
 
+**Live URL:** GitHub Pages project sites are served at `https://<user>.github.io/<repo>/` (for this repo: `https://dhruv-aga.github.io/stock-exp/`). Navigation links are base-path aware, so `/portfolio/` resolves correctly under the repo prefix — not at `https://<user>.github.io/portfolio/`.
+
 No frontend build step is required. The agent API (`run_agent_api.py`) runs locally or on a backend host — it is not deployed to GitHub Pages.
 
 ## Deploy the Kite proxy

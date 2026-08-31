@@ -1,12 +1,15 @@
 import { mountNav } from "./nav.js";
 import { mountStatusStrip, fetchSummary } from "./status.js";
 import { mountOnboarding } from "./onboarding.js";
+import { rewriteStaticLinks } from "./paths.js";
 
 /**
  * @param {{ page: string, showStatus?: boolean, showOnboarding?: boolean }} options
  */
 export async function initShell(options) {
   const { page, showStatus = true, showOnboarding = false } = options;
+
+  rewriteStaticLinks();
 
   const navSlot = document.querySelector("#shell-nav");
   const statusSlot = document.querySelector("#shell-status");

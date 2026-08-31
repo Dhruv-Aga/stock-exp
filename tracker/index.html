@@ -2,11 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0;url=/portfolio/" />
     <title>Redirecting…</title>
-    <script>location.replace("/portfolio/");</script>
+    <script src="../src/shell/base-path-detect.js"></script>
+    <script>
+      var target = (window.__BASE_PATH__ || "") + "/portfolio/";
+      document.write('<meta http-equiv="refresh" content="0;url=' + target + '" />');
+      location.replace(target);
+    </script>
   </head>
   <body>
-    <p><a href="/portfolio/">Moved to Portfolio</a></p>
+    <p><a id="portfolio-link" href="/portfolio/">Moved to Portfolio</a></p>
+    <script>
+      document.getElementById("portfolio-link").href = target;
+    </script>
   </body>
 </html>
