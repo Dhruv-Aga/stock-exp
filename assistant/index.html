@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trading Assistant — Bharat Scout</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="./assistant.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="site-nav" aria-label="Main">
+        <a href="/">Screener</a>
+        <a href="/tracker/">Portfolio Tracker</a>
+        <a href="/paper/">Paper Dashboard</a>
+        <a href="/assistant/" aria-current="page">Assistant</a>
+      </nav>
+
+      <header class="header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">🤖</div>
+          <div>
+            <h1>Trading Assistant</h1>
+            <p class="sub" id="agentStatus">Connecting to agent…</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="assistant-layout">
+        <section class="card assistant-chat" aria-label="Chat">
+          <div class="chat-messages" id="chatMessages"></div>
+          <form class="chat-form" id="chatForm">
+            <textarea
+              id="chatInput"
+              rows="2"
+              placeholder="Ask about your portfolio, run a strategy, or benchmark performance…"
+              required
+            ></textarea>
+            <button class="btn-primary" type="submit" id="sendBtn">Send</button>
+          </form>
+        </section>
+
+        <aside class="card assistant-sidebar">
+          <h2>Available tools</h2>
+          <p class="sub">The assistant can call these automatically based on your question.</p>
+          <ul class="tool-list" id="toolList"></ul>
+          <div class="assistant-hint">
+            <strong>Kite portfolio:</strong> configure <code>KITE_*</code> in <code>.env</code><br />
+            <strong>LLM:</strong> configure <code>GROQ_API_KEY</code> in <code>.env</code><br />
+            <strong>Scripts:</strong> add files to <code>scripts/sandbox/</code>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script type="module" src="./assistant.js"></script>
+  </body>
+</html>

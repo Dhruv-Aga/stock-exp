@@ -1,0 +1,290 @@
+"""Tool schemas and dispatch for the in-app trading assistant."""
+
+from __future__ import annotations
+
+import json
+from typing import Any, Callable
+
+from src.agent.tools import benchmark, kite_tools, scripts, strategies, tickers
+
+ToolHandler = Callable[[dict[str, Any]], Any]
+
+TOOL_HANDLERS: dict[str, ToolHandler] = {
+    # Kite portfolio (mirrors Kite MCP tool names)
+    "get_profile": kite_tools.get_profile,
+    "get_holdings": kite_tools.get_holdings,
+    "get_positions": kite_tools.get_positions,
+    "get_margins": kite_tools.get_margins,
+    # Strategy tools (one per strategy)
+    "run_mean_reversion_strategy": strategies.run_mean_reversion_strategy,
+    "run_momentum_breakout_strategy": strategies.run_momentum_breakout_strategy,
+    "run_trend_following_strategy": strategies.run_trend_following_strategy,
+    "get_all_strategy_signals": strategies.get_all_strategy_signals,
+    # Ticker tools
+    "get_ticker_quote": tickers.get_ticker_quote,
+    "get_ticker_history": tickers.get_ticker_history,
+    "list_configured_tickers": tickers.list_configured_tickers,
+    # Portfolio benchmarking
+    "get_paper_portfolio_status": benchmark.get_paper_portfolio_status,
+    "run_portfolio_backtest": benchmark.run_portfolio_backtest,
+    "get_rolling_benchmark": benchmark.get_rolling_benchmark,
+    "compare_portfolio_to_capital": benchmark.compare_portfolio_to_capital,
+    # Script runner
+    "run_python_script": scripts.run_python_script,
+    "run_node_script": scripts.run_node_script,
+}
+
+
+def tool_schemas() -> list[dict[str, Any]]:
+    """OpenAI-compatible tool definitions for Groq function calling."""
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_profile",
+                "description": "Get Zerodha Kite user profile (name, email, broker). Requires Kite credentials in .env.",
+                "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_holdings",
+                "description": "Get long-term portfolio holdings from Kite (CNC/delivery positions).",
+                "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_positions",
+                "description": "Get current day and net trading positions from Kite with unrealized P&L.",
+                "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_margins",
+                "description": "Get Kite account margins: available cash, collateral, and utilization.",
+                "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "run_mean_reversion_strategy",
+                "description": "Run mean-reversion strategy (Bollinger + RSI) on a ticker and return latest signal.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "symbol": {
+                            "type": "string",
+                            "description": "NSE symbol e.g. VAML.NS or VEDL.NS",
+                        },
+                        "refresh": {
+                            "type": "boolean",
+                            "description": "Refresh market data cache",
+                            "default": False,
+                        },
+                    },
+                    "required": ["symbol"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "run_momentum_breakout_strategy",
+                "description": "Run momentum breakout strategy (range breakout + volume) on a ticker.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "symbol": {"type": "string"},
+                        "refresh": {"type": "boolean", "default": False},
+                    },
+                    "required": ["symbol"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "run_trend_following_strategy",
+                "description": "Run trend-following strategy (EMA crossover) on a ticker.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "symbol": {"type": "string"},
+                        "refresh": {"type": "boolean", "default": False},
+                    },
+                    "required": ["symbol"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_all_strategy_signals",
+                "description": "Run each configured market's assigned strategy and return all latest signals.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "refresh": {"type": "boolean", "default": False},
+                    },
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_ticker_quote",
+                "description": "Get latest quote (LTP, change) for an NSE ticker via yfinance or Kite.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "symbol": {"type": "string"},
+                        "use_kite": {"type": "boolean", "default": False},
+                    },
+                    "required": ["symbol"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_ticker_history",
+                "description": "Get recent OHLCV bars for a ticker at a given interval (15m, 1h, 4h).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "symbol": {"type": "string"},
+                        "interval": {
+                            "type": "string",
+                            "enum": ["15m", "1h", "4h"],
+                            "default": "1h",
+                        },
+                        "bars": {"type": "integer", "default": 20, "minimum": 5, "maximum": 100},
+                        "refresh": {"type": "boolean", "default": False},
+                    },
+                    "required": ["symbol"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "list_configured_tickers",
+                "description": "List all tickers configured in the trading bot with strategy and interval.",
+                "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_paper_portfolio_status",
+                "description": "Get paper-trading portfolio snapshot: equity, P&L, open positions, recent trades.",
+                "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "run_portfolio_backtest",
+                "description": "Run historical backtest across all configured markets and return summary metrics.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "refresh": {"type": "boolean", "default": False},
+                    },
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_rolling_benchmark",
+                "description": "Rolling 30-day backtest benchmark windows and monthly P&L breakdown.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "refresh": {"type": "boolean", "default": False},
+                    },
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "compare_portfolio_to_capital",
+                "description": "Compare current paper or Kite portfolio equity against initial capital benchmark.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "source": {
+                            "type": "string",
+                            "enum": ["paper", "kite"],
+                            "default": "paper",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "run_python_script",
+                "description": "Run a Python script from scripts/sandbox/. Returns stdout/stderr.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "filename": {
+                            "type": "string",
+                            "description": "Script filename e.g. my_analysis.py",
+                        },
+                        "args": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Optional CLI arguments",
+                        },
+                    },
+                    "required": ["filename"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "run_node_script",
+                "description": "Run a Node.js script from scripts/sandbox/. Returns stdout/stderr.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "filename": {"type": "string"},
+                        "args": {"type": "array", "items": {"type": "string"}},
+                    },
+                    "required": ["filename"],
+                },
+            },
+        },
+    ]
+
+
+def execute_tool(name: str, arguments: dict[str, Any] | str | None) -> str:
+    """Run a tool and return JSON string result."""
+    if name not in TOOL_HANDLERS:
+        return json.dumps({"error": f"Unknown tool: {name}"})
+
+    if isinstance(arguments, str):
+        try:
+            arguments = json.loads(arguments) if arguments.strip() else {}
+        except json.JSONDecodeError:
+            arguments = {}
+
+    arguments = arguments or {}
+
+    try:
+        result = TOOL_HANDLERS[name](arguments)
+        return json.dumps(result, default=str)
+    except Exception as exc:
+        return json.dumps({"error": str(exc), "tool": name})

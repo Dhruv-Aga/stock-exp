@@ -1,87 +1,78 @@
 # Agent instructions
 
-## Kite MCP setup
+## In-app trading assistant
 
-This project uses Zerodha's hosted **Kite MCP** server so agents can check live portfolio status, positions, margins, and market data from a connected Kite account.
+The application includes an **in-app LLM assistant** at `/assistant/` that uses Groq tool-calling to answer portfolio and strategy questions. It is **not** limited to Cursor IDE — it runs as part of the app.
 
-### Configuration
+### Architecture
 
-Project-level config lives in [`.cursor/mcp.json`](.cursor/mcp.json):
-
-```json
-{
-  "mcpServers": {
-    "kite": {
-      "url": "https://mcp.kite.trade/mcp"
-    }
-  }
-}
+```
+Browser (/assistant/)  →  POST /api/agent/chat  →  Groq LLM + tool loop
+                                                      ↓
+                                              src/agent/tools/*
+                                              (Kite, strategies, tickers, benchmark, scripts)
 ```
 
-No API keys are required in `mcp.json` for the hosted server. Restart Cursor after changing MCP configuration.
+Start the agent API:
 
-### First-time authorization
+```bash
+python3 run_agent_api.py   # port 8000
+python3 -m http.server 8080
+```
 
-1. Open Cursor **Settings → Tools & MCP** and confirm the `kite` server is enabled.
-2. In Agent chat, invoke a Kite MCP tool (for example `get_profile` or `get_holdings`).
-3. Follow the Zerodha authorization prompt to link your Kite account.
+Open `http://localhost:8080/assistant/`.
 
-Hosted Kite MCP excludes destructive trading operations. For full API access, self-host [zerodha/kite-mcp-server](https://github.com/zerodha/kite-mcp-server) with your own `KITE_API_KEY` and `KITE_API_SECRET`.
+### Required configuration
 
-## Checking portfolio status and performance
+| Variable | Purpose |
+|----------|---------|
+| `GROQ_API_KEY` | Powers the in-app LLM (required for chat) |
+| `GROQ_MODEL` | Optional, default `llama-3.3-70b-versatile` |
+| `KITE_API_KEY` | Live portfolio tools via Kite Connect |
+| `KITE_API_SECRET` | Kite OAuth |
+| `KITE_ACCESS_TOKEN` | Daily token from `python run_kite_login.py` |
 
-### Live Kite account (via Kite MCP)
+### Available tools (17)
 
-When asked about **live** portfolio status or performance, use Kite MCP tools:
+**Kite portfolio** (mirrors Kite MCP surface via Kite Connect):
+- `get_profile`, `get_holdings`, `get_positions`, `get_margins`
 
-| Tool | Use for |
-|------|---------|
-| `get_profile` | Account identity and basic profile |
-| `get_margins` | Available cash, collateral, and margin utilization |
-| `get_holdings` | Long-term portfolio holdings |
-| `get_positions` | Intraday and overnight open positions with P&L |
-| `get_mf_holdings` | Mutual fund investments |
+**Trading strategies** (one tool per strategy):
+- `run_mean_reversion_strategy`
+- `run_momentum_breakout_strategy`
+- `run_trend_following_strategy`
+- `get_all_strategy_signals`
 
-Combine `get_positions` and `get_holdings` for a full portfolio snapshot. Use `get_margins` for available capital.
+**Tickers:**
+- `get_ticker_quote`, `get_ticker_history`, `list_configured_tickers`
 
-### Paper trading (via committed snapshots)
+**Portfolio benchmarking:**
+- `get_paper_portfolio_status`
+- `run_portfolio_backtest`
+- `get_rolling_benchmark`
+- `compare_portfolio_to_capital`
 
-For **paper trading** performance (India Trading Bot), read these files from the repo:
+**Script runner:**
+- `run_python_script` — runs `.py` files from `scripts/sandbox/`
+- `run_node_script` — runs `.js` files from `scripts/sandbox/`
 
-| File | Contents |
-|------|----------|
-| [`paper/analysis.json`](paper/analysis.json) | Latest KPIs: equity, cash, unrealized P&L, total return %, today/week/month realized P&L, open positions, recent trades, daily equity history, `generated_at` |
-| [`data/trades.json`](data/trades.json) | Full closed-trade history exported from SQLite |
-| [`data/paper_state.json`](data/paper_state.json) | Raw paper portfolio state (committed by CI when changed) |
+### Example queries
 
-### Key fields in `paper/analysis.json`
+- "What's my Kite portfolio P&L?" → `get_positions`, `get_holdings`
+- "Run mean reversion on VEDL" → `run_mean_reversion_strategy`
+- "How is paper trading doing vs Rs 1 lakh?" → `compare_portfolio_to_capital`
+- "Show all strategy signals" → `get_all_strategy_signals`
+- "Run list_tickers.py" → `run_python_script`
 
-- `equity`, `cash`, `unrealized_pnl`, `total_return_pct`
-- `today_pnl`, `week_pnl`, `month_pnl`
-- `open_positions` — symbol, side, quantity, entry_price, mark_price, unrealized_pnl
-- `recent_trades` — last closed trades
-- `daily_equity` — equity snapshots for charting
-- `generated_at` — when the snapshot was last built
+### Cursor IDE Kite MCP
+
+[`.cursor/mcp.json`](.cursor/mcp.json) also points to hosted Kite MCP (`https://mcp.kite.trade/mcp`) for Cursor-native agents. The in-app assistant uses Kite Connect tools with the same tool names for consistency.
 
 ## Web UI routes
 
 | Route | Page |
 |-------|------|
 | `/` | Bharat Scout screener |
-| `/tracker/` | Portfolio tracker (loads `paper/analysis.json`) |
+| `/tracker/` | Portfolio tracker (paper snapshot) |
 | `/paper/` | Full paper trading dashboard |
-
-## Local development
-
-```bash
-# Install dependencies
-./.cursor/install.sh
-
-# Generate paper dashboard + analysis snapshot
-python3 scripts/generate_dashboard.py --no-refresh
-
-# Serve static site
-python3 -m http.server 8080
-```
-
-Open `http://localhost:8080`, `http://localhost:8080/tracker/`, and `http://localhost:8080/paper/`.
+| `/assistant/` | In-app LLM trading assistant |

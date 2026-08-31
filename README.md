@@ -14,6 +14,7 @@ Bharat Scout is a responsive NSE watchlist and value screener that can be hosted
 | `/` | Bharat Scout screener |
 | `/tracker/` | Portfolio tracker (loads `paper/analysis.json`) |
 | `/paper/` | Full paper trading dashboard |
+| `/assistant/` | In-app LLM assistant with Kite + strategy tools |
 
 ## Project structure
 
@@ -21,6 +22,10 @@ Bharat Scout is a responsive NSE watchlist and value screener that can be hosted
 index.html                    Bharat Scout screener (site root)
 style.css                     Shared responsive UI
 tracker/                      Portfolio tracker subpage
+assistant/                    In-app LLM trading assistant (chat UI)
+src/agent/                    Agent tool registry, handlers, Groq chat loop
+run_agent_api.py              FastAPI agent server (port 8000)
+scripts/sandbox/              Custom Python/Node scripts for assistant
 paper/                        Generated paper dashboard + analysis.json
 src/app.js                    UI state, filters, watchlist, CSV export
 src/api.js                    Demo quotes and backend quote client
@@ -41,7 +46,8 @@ Because the app uses ES modules, serve it over HTTP instead of opening `index.ht
 
 ```bash
 ./.cursor/install.sh
-python scripts/generate_dashboard.py --no-refresh
+python3 scripts/generate_dashboard.py --no-refresh
+python3 run_agent_api.py &          # agent API on :8000
 python3 -m http.server 8080
 ```
 
@@ -50,26 +56,34 @@ Then open:
 - <http://localhost:8080> — screener
 - <http://localhost:8080/tracker/> — portfolio tracker
 - <http://localhost:8080/paper/> — paper dashboard
+- <http://localhost:8080/assistant/> — in-app LLM assistant
+
+## In-app trading assistant
+
+The assistant at `/assistant/` uses **Groq + tool calling** to answer questions about your portfolio, run strategies, and benchmark performance.
+
+1. Set `GROQ_API_KEY` in `.env` for the LLM.
+2. Set `KITE_*` credentials for live portfolio tools (same surface as Kite MCP).
+3. Start `python3 run_agent_api.py` (port 8000).
+4. Open `/assistant/` and ask questions like "What's my portfolio P&L?" or "Run mean reversion on VEDL".
+
+Custom scripts go in `scripts/sandbox/` and can be invoked via `run_python_script` / `run_node_script` tools.
+
+See [`AGENTS.md`](AGENTS.md) for the full tool list.
+
+## Kite MCP (Cursor IDE)
+
+[`.cursor/mcp.json`](.cursor/mcp.json) configures hosted Kite MCP for Cursor-native agents. The in-app assistant uses equivalent Kite Connect tools.
 
 ## Deploy to GitHub Pages
 
 1. Push this repository to GitHub.
 2. In GitHub, open **Settings → Pages**.
 3. Set **Source** to **GitHub Actions**.
-4. The **Daily paper trading report** workflow runs on weekdays, updates `paper/analysis.json`, and deploys the full static site (screener + tracker + paper dashboard).
+4. The **Daily paper trading report** workflow runs on weekdays, updates `paper/analysis.json`, and deploys the full static site.
 5. For a one-off manual deploy, run **Deploy static frontend to GitHub Pages**.
 
-No frontend build step is required.
-
-## Kite MCP (for Cursor agents)
-
-Agents can check **live** portfolio status via Zerodha Kite MCP. Configuration is in [`.cursor/mcp.json`](.cursor/mcp.json).
-
-1. Confirm the `kite` server points to `https://mcp.kite.trade/mcp`.
-2. Restart Cursor.
-3. In Agent chat, run a Kite MCP tool and authorize your Zerodha account when prompted.
-
-See [`AGENTS.md`](AGENTS.md) for Kite MCP tools (`get_holdings`, `get_positions`, `get_margins`) and paper-trading snapshot files (`paper/analysis.json`).
+No frontend build step is required. The agent API (`run_agent_api.py`) runs locally or on a backend host — it is not deployed to GitHub Pages.
 
 ## Deploy the Kite proxy
 

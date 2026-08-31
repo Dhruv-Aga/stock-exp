@@ -7,12 +7,17 @@
       "command": "python3 -m http.server 8080 --bind 0.0.0.0"
     },
     {
+      "name": "agent-api",
+      "command": "python3 run_agent_api.py"
+    },
+    {
       "name": "kite-proxy",
       "command": "cd server && npm start"
     }
   ],
   "ports": [
     { "name": "frontend", "port": 8080 },
+    { "name": "agent-api", "port": 8000 },
     { "name": "kite-proxy", "port": 3000 }
   ]
 }
