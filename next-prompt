@@ -1,0 +1,2 @@
+And this data should be like let's say if we made a trade at this date at day one at what time we are making the trade and then at what time we basically we are buying and selling it should include the timing as well and then the returns on it so that I can understand how things are working is it actually working or not will work or not eventually 
+These traits should be stored in a small file based db so that you can also review them later on if needed it should mimic basically it should mimic the actual trading that we will do when we make the system live

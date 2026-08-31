@@ -1,0 +1,11 @@
+.env
+.env.local
+__pycache__/
+*.py[cod]
+.pytest_cache/
+data/cache/
+data/paper_state.json
+data/live_state.json
+data/trading.db
+data/reports/
+*.log

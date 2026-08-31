@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "n8n-mcp": {
+      "command": "C:/Users/dhruv/AppData/Roaming/npm/n8n-mcp.cmd",
+      "env": {
+        "N8N_API_URL": "http://localhost:5678",
+        "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNzYxYTQyNC1kZDQyLTQ5NTctYjEyNS00OTk3NDZmZmVjNWUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiM2YzMjEyMGUtODBjZC00ZTNkLWJkNGMtMjk0ZjFlYmE1ZWUyIiwiaWF0IjoxNzgyMzg3NDEwfQ.18Yd5XM-aCt8q1scnwxMTFzk5PEr3Vh6wIi4BFqqTxM"
+      }
+    }
+  }
+}
