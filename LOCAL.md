@@ -36,6 +36,7 @@ Everything reads from **`.env` at the repo root**:
 | `KITE_*` | Live portfolio tools + synced to `server/.env` for quote proxy |
 | `LIVE_TRADING` | Enable live mode (still requires approval per trade) |
 | `REQUIRE_TRADE_APPROVAL` | Gate live orders behind `/approvals/` |
+| `AUTO_APPROVE_TRADES` | Execute live proposals immediately (keeps audit trail) |
 | `FRONTEND_PORT` / `AGENT_API_PORT` | `dev.sh` ports |
 
 You do **not** need to configure each page separately. `scripts/sync_env.sh` copies Kite keys into `server/.env` automatically.

@@ -79,7 +79,7 @@ Then open:
 
 1. **Paper trading** — strategies run automatically on simulated Rs 1,00,000 capital.
 2. **Shadow proposals** — each paper entry can queue a preview of what live would do.
-3. **Live trading** — when `LIVE_TRADING=true`, automation creates proposals; **you approve at `/approvals/`** before any real Kite order.
+3. **Live trading** — when `LIVE_TRADING=true`, automation creates proposals; **you approve at `/approvals/`** before any real Kite order (unless `AUTO_APPROVE_TRADES=true`).
 
 The assistant can analyze your portfolio and propose trades. It **cannot** approve or execute live orders for you.
 

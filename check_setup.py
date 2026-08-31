@@ -90,9 +90,12 @@ def main():
         print(warn("Kite: add KITE_API_KEY, KITE_API_SECRET, KITE_ACCESS_TOKEN"))
 
     if settings.require_trade_approval():
-        print(ok("Live trades: require approval at /approvals/"))
+        if settings.auto_approve_trades():
+            print(warn("AUTO_APPROVE_TRADES=true — live proposals execute without manual review"))
+        else:
+            print(ok("Live trades: require approval at /approvals/"))
     else:
-        print(warn("REQUIRE_TRADE_APPROVAL=false — live orders may auto-execute"))
+        print(warn("REQUIRE_TRADE_APPROVAL=false — live orders may auto-execute without proposals"))
 
     if settings.live_trading_enabled():
         print(warn("LIVE_TRADING=true — real orders possible after approval"))

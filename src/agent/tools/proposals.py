@@ -50,13 +50,24 @@ def propose_trade(args: dict[str, Any]) -> dict[str, Any]:
     else:
         raise ValueError("action must be 'enter' or 'exit'")
 
-    return {
-        "proposal": proposal,
-        "message": (
+    if proposal.get("status") == "executed":
+        message = "Trade auto-approved and executed on Kite (AUTO_APPROVE_TRADES=true)."
+    elif proposal.get("auto_execute_error"):
+        message = (
+            "Trade queued for your approval. Auto-execute failed: "
+            f"{proposal['auto_execute_error']}. Review at /approvals/."
+        )
+    else:
+        message = (
             "Trade queued for your approval. Open /approvals/ to review and approve or reject. "
             "No real order has been placed yet."
-        ),
+        )
+
+    return {
+        "proposal": proposal,
+        "message": message,
         "pending_count": pending_count(),
+        "auto_approve_enabled": settings.auto_approve_trades(),
     }
 
 

@@ -2,6 +2,7 @@ import { agentUrl } from "../src/shell/config.js";
 
 const listEl = document.querySelector("#proposalList");
 const statusEl = document.querySelector("#approvalStatus");
+const bannerEl = document.querySelector(".approval-banner");
 
 function escapeHtml(v) {
   return String(v)
@@ -34,6 +35,20 @@ function formatProposal(p) {
 
 async function loadProposals() {
   try {
+    const healthRes = await fetch(agentUrl("/api/agent/health"));
+    if (healthRes.ok) {
+      const health = await healthRes.json();
+      if (health.auto_approve_trades && bannerEl) {
+        bannerEl.innerHTML = `
+          <strong>Auto-approve enabled</strong>
+          <p>
+            <code>AUTO_APPROVE_TRADES=true</code> in <code>.env</code> — live proposals from
+            automation and the assistant execute on Kite immediately. Paper shadow proposals
+            still require manual review here.
+          </p>`;
+      }
+    }
+
     const res = await fetch(agentUrl("/api/approvals?status=pending"));
     const data = await res.json();
     statusEl.textContent = `${data.pending_count} pending · approval required before live trades`;

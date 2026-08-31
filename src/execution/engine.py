@@ -24,7 +24,7 @@ from src.risk import (
     portfolio_equity,
 )
 from src.safety import SafetyHalt, check_can_trade, is_market_open
-from src.approvals.propose import propose_entry, propose_exit
+from src.approvals.propose import propose_entry, propose_exit, proposal_action_suffix
 
 logger = logging.getLogger(__name__)
 
@@ -170,8 +170,7 @@ def run_live_session(*, refresh: bool = True, force: bool = False) -> str:
                         source="automation",
                     )
                     actions.append(
-                        f"PROPOSED STOP {m.name} — awaiting your approval "
-                        f"(id={proposal['id'][:8]}…)"
+                        f"PROPOSED STOP {m.name} — {proposal_action_suffix(proposal)}"
                     )
                 else:
                     result = orders.exit(intent, position_side=pos.side)
@@ -204,8 +203,7 @@ def run_live_session(*, refresh: bool = True, force: bool = False) -> str:
                     source="automation",
                 )
                 actions.append(
-                    f"PROPOSED EXIT {m.name} — awaiting your approval "
-                    f"(id={proposal['id'][:8]}…)"
+                    f"PROPOSED EXIT {m.name} — {proposal_action_suffix(proposal)}"
                 )
             else:
                 result = orders.exit(intent, position_side=pos.side)
@@ -253,7 +251,7 @@ def run_live_session(*, refresh: bool = True, force: bool = False) -> str:
                 side = "LONG" if signal == 1 else "SHORT"
                 actions.append(
                     f"PROPOSED {side} {m.name} qty={qty:.0f} stop=Rs{stop:.2f} — "
-                    f"awaiting your approval (id={proposal['id'][:8]}…)"
+                    f"{proposal_action_suffix(proposal)}"
                 )
             else:
                 result = orders.enter(intent)

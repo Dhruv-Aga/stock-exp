@@ -33,6 +33,7 @@ The assistant can **propose** trades and analyze portfolios. It **cannot approve
 | `KITE_*` | Live portfolio tools + approved execution |
 | `LIVE_TRADING=true` | Enable live mode (still requires per-trade approval) |
 | `REQUIRE_TRADE_APPROVAL=true` | Gate all live orders behind `/approvals/` (default) |
+| `AUTO_APPROVE_TRADES=true` | Auto-execute live proposals (audit trail kept; shadow/paper proposals still manual) |
 | `SHADOW_LIVE_PROPOSALS=true` | Paper sessions queue shadow live proposals |
 
 ### Tools (20)

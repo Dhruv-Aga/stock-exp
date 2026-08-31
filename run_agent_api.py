@@ -75,6 +75,7 @@ def health():
         "kite_configured": settings.kite_configured(),
         "live_trading": not settings.dry_run_mode(),
         "require_trade_approval": settings.require_trade_approval(),
+        "auto_approve_trades": settings.auto_approve_trades(),
         "pending_proposals": pending_count(),
         "tools_count": len(list_available_tools()),
     }
@@ -91,6 +92,7 @@ def trading_summary():
             "kite_configured": settings.kite_configured(),
             "live_trading": not settings.dry_run_mode(),
             "require_trade_approval": settings.require_trade_approval(),
+            "auto_approve_trades": settings.auto_approve_trades(),
             "pending_proposals": pending_count(),
             "tools_count": len(list_available_tools()),
         },
@@ -106,6 +108,7 @@ def trading_summary():
             "env_file": (ROOT / ".env").exists(),
             "paper_snapshot": (ROOT / "paper" / "analysis.json").exists(),
             "services_running": _frontend_running(),
+            "auto_approve_trades": settings.auto_approve_trades(),
         },
     }
 

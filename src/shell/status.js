@@ -67,6 +67,14 @@ function renderStatus(container, data, agentOnline) {
     parts.push(pill("Kite", agent.kite_configured, agent.kite_configured ? "" : "Add KITE_* to .env"));
   }
 
+  if (agent.auto_approve_trades) {
+    parts.push(
+      pill("Auto-approve ON", false, "AUTO_APPROVE_TRADES=true — live proposals execute immediately")
+    );
+  } else if (agent.require_trade_approval) {
+    parts.push(pill("Approval required", true));
+  }
+
   const pending = Number(agent.pending_proposals || 0);
   if (pending > 0) {
     parts.push(`<a class="status-pill alert" href="/approvals/">${pending} pending approval${pending === 1 ? "" : "s"}</a>`);
