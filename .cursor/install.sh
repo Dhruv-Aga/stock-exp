@@ -8,7 +8,11 @@ python3 -m pip install --user -r requirements.txt
 
 # Bharat Scout Kite proxy (Node/Express)
 cd server
-npm ci
+if [ -f package-lock.json ]; then
+  npm ci
+else
+  npm install
+fi
 cd ..
 
 # Local config from examples when missing (secrets added via dashboard)
