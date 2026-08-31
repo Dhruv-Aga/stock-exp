@@ -148,8 +148,22 @@ def main():
     args = parser.parse_args()
 
     refresh = args.refresh and not args.no_refresh
+    # Load any previously-committed trades JSON so the dashboard can show history
+    SAVED_TRADES = ROOT / "data" / "trades.json"
+    saved_trades = []
+    if SAVED_TRADES.exists():
+        try:
+            saved_trades = json.loads(SAVED_TRADES.read_text(encoding="utf-8"))
+        except Exception:
+            saved_trades = []
+
     session = run_paper_session(refresh=refresh)
     analysis = build_paper_analysis(session=session)
+
+    # If DB has no trades (common on ephemeral runners), fall back to saved_trades
+    if (not analysis.get('recent_trades')) and saved_trades:
+        analysis['recent_trades'] = saved_trades[-20:]
+        analysis['total_closed_trades'] = len(saved_trades)
 
     # Persist JSON analysis for debugging
     with (DOCS / "analysis.json").open("w", encoding="utf-8") as f:
@@ -158,6 +172,17 @@ def main():
     html_out = render_html(analysis)
     with (DOCS / "index.html").open("w", encoding="utf-8") as f:
         f.write(html_out)
+
+    # Export DB trades to data/trades.json so future runs can reuse history
+    try:
+        from src.db import all_trades  # noqa: E402
+
+        all_t = all_trades(run_type="paper")
+        (ROOT / "data").mkdir(parents=True, exist_ok=True)
+        with (ROOT / "data" / "trades.json").open("w", encoding="utf-8") as f:
+            json.dump(all_t, f, default=str, indent=2)
+    except Exception:
+        pass
 
     print(f"Wrote dashboard to {DOCS / 'index.html'}")
 
