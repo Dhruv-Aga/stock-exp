@@ -4,33 +4,21 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from pathlib import Path
 
 from config import MARKETS
 from src import settings
-from src.backtest import STRATEGY_MAP
-from src.data_loader import load_market_data
 from src.db import record_session_equity, record_trade, recent_trades, update_daily_pnl
-from src.risk import (
-    Position,
-    Portfolio,
-    calc_position_size,
-    calc_stop,
-    correlation_blocks_new_trade,
-    portfolio_equity,
-)
-from src.risk_governor import (
-    build_governor_context,
-    evaluate_risk_governor,
-    format_risk_decision,
-)
+from src.risk import Position, Portfolio, portfolio_equity
+from src.risk_governor import format_risk_decision
 from src.trade_reasons import (
-    entry_reason,
     exit_reason_label,
     symbol_label,
     trade_reason_summary,
 )
+from src.trading.session_plan import build_session_plan
 
-STATE_FILE = __import__("pathlib").Path(__file__).resolve().parent.parent / "data" / "paper_state.json"
+STATE_FILE = Path(__file__).resolve().parent.parent / "data" / "paper_state.json"
 
 
 def _load_state() -> Portfolio:
@@ -112,7 +100,7 @@ def _record_closed_trade(
         run_type="paper",
         dry_run=True,
     )
-    update_daily_pnl(realized_delta=pnl)
+    update_daily_pnl(realized_delta=pnl, run_type="paper")
 
 
 def _close_long(
@@ -179,191 +167,77 @@ def _close_short(
     )
 
 
-def _process_exits(
-    portfolio: Portfolio,
-    m,
-    row,
-    ts,
-    price: float,
-    signal: int,
-    actions: list[str],
-) -> None:
-    pos = portfolio.positions.get(m.symbol)
-    if pos:
-        if pos.side == 1 and row["Low"] <= pos.stop_price:
-            _close_long(
-                portfolio,
-                m.symbol,
-                exit_price=pos.stop_price,
-                ts=ts,
-                exit_reason_code="stop_loss",
-                actions=actions,
-            )
-            pos = None
-        elif pos.side == -1 and row["High"] >= pos.stop_price:
-            _close_short(
-                portfolio,
-                m.symbol,
-                exit_price=pos.stop_price,
-                ts=ts,
-                exit_reason_code="stop_loss",
-                actions=actions,
-            )
-            pos = None
-
-    pos = portfolio.positions.get(m.symbol)
-    if pos:
-        should_exit = False
-        exit_code = "signal_exit"
-        if m.strategy in ("mean_reversion", "momentum_breakout"):
-            should_exit = signal != 0 and signal != pos.side
-        elif m.strategy == "trend_following":
-            should_exit = signal != pos.side
-            exit_code = "trend_exit"
-
-        if should_exit:
-            if pos.side == 1:
-                _close_long(
-                    portfolio,
-                    m.symbol,
-                    exit_price=price,
-                    ts=ts,
-                    exit_reason_code=exit_code,
-                    actions=actions,
-                )
-            else:
-                _close_short(
-                    portfolio,
-                    m.symbol,
-                    exit_price=price,
-                    ts=ts,
-                    exit_reason_code=exit_code,
-                    actions=actions,
-                )
-
-
 def run_paper_session(*, refresh: bool = True) -> dict:
     """Evaluate latest bar for each market and update paper portfolio."""
     portfolio = _load_state()
-    prices: dict[str, float] = {}
+    plan = build_session_plan(portfolio, refresh=refresh)
+    prices = plan.prices
+    data_as_of = plan.data_as_of
     actions: list[str] = []
-    data_as_of: dict[str, str] = {}
-    market_rows: list[dict] = []
 
-    # Phase 1: load markets, process exits, collect signals
-    for m in MARKETS:
-        df = load_market_data(m.symbol, m.interval, refresh=refresh)
-        signals = STRATEGY_MAP[m.strategy](df)
-        if signals.empty:
-            continue
-
-        row = signals.iloc[-1]
-        ts = signals.index[-1]
-        price = float(row["Close"])
-        atr = float(row.get("atr", 0) or 0)
-        signal = int(row.get("signal", 0) or 0)
-        prices[m.symbol] = price
-        data_as_of[m.symbol] = str(ts)
-
-        reason_text = (
-            entry_reason(m.strategy, signal, row) if signal != 0 else "No entry signal"
-        )
-        market_rows.append(
-            {
-                "market": m,
-                "row": row,
-                "ts": ts,
-                "price": price,
-                "atr": atr,
-                "signal": signal,
-                "entry_reason_text": reason_text,
-            }
-        )
-        _process_exits(portfolio, m, row, ts, price, signal, actions)
-
-    # Phase 2: risk governor (rules + Groq LLM)
-    governor_context = build_governor_context(
-        portfolio, market_rows=market_rows, prices=prices
-    )
-    risk_decision = evaluate_risk_governor(governor_context)
-
-    # Phase 3: new entries (respect governor)
-    for item in market_rows:
-        m = item["market"]
-        row = item["row"]
-        ts = item["ts"]
-        price = item["price"]
-        atr = item["atr"]
-        signal = item["signal"]
-        reason_text = item["entry_reason_text"]
-
-        if m.symbol in portfolio.positions:
-            continue
-        if signal == 0 or atr <= 0:
-            continue
-
-        if risk_decision.block_new_entries:
-            actions.append(
-                f"SKIP {m.name} - risk governor blocked new entries "
-                f"({risk_decision.action})"
+    for intent in plan.exit_intents:
+        if intent.side == 1:
+            _close_long(
+                portfolio,
+                intent.symbol,
+                exit_price=intent.price,
+                ts=intent.ts,
+                exit_reason_code=intent.reason_code,
+                actions=actions,
             )
-            continue
-
-        if correlation_blocks_new_trade(
-            m.symbol, signal, m.group, portfolio.positions
-        ):
-            actions.append(
-                f"SKIP {m.name} - correlation filter "
-                f"(already long another {m.group} symbol)"
+        else:
+            _close_short(
+                portfolio,
+                intent.symbol,
+                exit_price=intent.price,
+                ts=intent.ts,
+                exit_reason_code=intent.reason_code,
+                actions=actions,
             )
-            continue
 
-        equity = portfolio_equity(portfolio, prices)
-        qty = calc_position_size(equity, price, atr) * risk_decision.risk_multiplier
-        if qty <= 0:
+    for msg in plan.skip_messages:
+        actions.append(msg)
+
+    for intent in plan.entry_intents:
+        market = next((x for x in MARKETS if x.symbol == intent.symbol), None)
+        if not market:
             continue
-        cost = price * qty
-        if signal == 1 and portfolio.cash < cost:
-            qty = portfolio.cash / price
-            cost = price * qty
-        if qty <= 0:
-            continue
-        stop = calc_stop(price, signal, atr)
-        if signal == 1:
+        cost = intent.price * intent.quantity
+        if intent.side == 1:
             portfolio.cash -= cost
         else:
             portfolio.cash += cost
-        portfolio.positions[m.symbol] = Position(
-            symbol=m.symbol,
-            side=signal,
-            entry_price=price,
-            quantity=qty,
-            stop_price=stop,
-            group=m.group,
-            entry_time=str(ts),
-            entry_reason=reason_text,
+        portfolio.positions[intent.symbol] = Position(
+            symbol=intent.symbol,
+            side=intent.side,
+            entry_price=intent.price,
+            quantity=intent.quantity,
+            stop_price=intent.stop_price,
+            group=market.group,
+            entry_time=str(intent.ts),
+            entry_reason=intent.reason_text,
         )
-        side = "LONG" if signal == 1 else "SHORT"
+        side = "LONG" if intent.side == 1 else "SHORT"
         mult_note = (
-            f" [risk {risk_decision.risk_multiplier:.2f}x]"
-            if risk_decision.risk_multiplier != 1.0
+            f" [risk {plan.risk_decision.get('risk_multiplier', 1.0):.2f}x]"
+            if plan.risk_decision.get("risk_multiplier", 1.0) != 1.0
             else ""
         )
         actions.append(
-            f"ENTER {side} {m.name} @ Rs{price:.2f} qty={qty:.2f} "
-            f"stop=Rs{stop:.2f}{mult_note} - {reason_text}"
+            f"ENTER {side} {intent.name} @ Rs{intent.price:.2f} qty={intent.quantity:.2f} "
+            f"stop=Rs{intent.stop_price:.2f}{mult_note} - {intent.reason_text}"
         )
         if settings.shadow_proposals_enabled():
             from src.approvals.propose import propose_entry as shadow_propose
 
             proposal = shadow_propose(
-                symbol=m.symbol,
-                side=signal,
-                quantity=qty,
-                price=price,
-                stop_price=stop,
-                reason=reason_text,
-                strategy=m.strategy,
+                symbol=intent.symbol,
+                side=intent.side,
+                quantity=intent.quantity,
+                price=intent.price,
+                stop_price=intent.stop_price,
+                reason=intent.reason_text,
+                strategy=intent.strategy,
                 source="paper_shadow",
             )
             actions.append(
@@ -375,10 +249,12 @@ def run_paper_session(*, refresh: bool = True) -> dict:
         (prices.get(sym, p.entry_price) - p.entry_price) * p.quantity * p.side
         for sym, p in portfolio.positions.items()
     )
-    record_session_equity(equity=equity, cash=portfolio.cash, unrealized=unrealized)
+    record_session_equity(
+        equity=equity, cash=portfolio.cash, unrealized=unrealized, run_type="paper"
+    )
     _save_state(portfolio)
 
-    risk_text = format_risk_decision(risk_decision)
+    risk_text = format_risk_decision(plan.risk_decision)
     lines = [
         "=" * 60,
         f"PAPER TRADING SESSION - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
@@ -428,8 +304,8 @@ def run_paper_session(*, refresh: bool = True) -> dict:
         "prices": prices,
         "data_as_of": data_as_of,
         "portfolio": portfolio,
-        "risk_decision": risk_decision.to_dict(),
-        "governor_context": governor_context,
+        "risk_decision": plan.risk_decision,
+        "governor_context": plan.governor_context,
     }
 
 

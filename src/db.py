@@ -39,10 +39,12 @@ def init_db() -> None:
             );
 
             CREATE TABLE IF NOT EXISTS daily_pnl (
-                trade_date TEXT PRIMARY KEY,
+                trade_date TEXT NOT NULL,
+                run_type TEXT NOT NULL DEFAULT 'paper',
                 realized_pnl REAL NOT NULL DEFAULT 0,
                 unrealized_pnl REAL NOT NULL DEFAULT 0,
-                notes TEXT
+                notes TEXT,
+                PRIMARY KEY (trade_date, run_type)
             );
 
             CREATE TABLE IF NOT EXISTS bot_state (
@@ -68,6 +70,36 @@ def init_db() -> None:
             );
             """
         )
+        _migrate_daily_pnl(conn)
+
+
+def _migrate_daily_pnl(conn) -> None:
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(daily_pnl)").fetchall()}
+    if not cols:
+        return
+    if "run_type" in cols:
+        return
+    conn.execute("ALTER TABLE daily_pnl RENAME TO daily_pnl_legacy")
+    conn.execute(
+        """
+        CREATE TABLE daily_pnl (
+            trade_date TEXT NOT NULL,
+            run_type TEXT NOT NULL DEFAULT 'paper',
+            realized_pnl REAL NOT NULL DEFAULT 0,
+            unrealized_pnl REAL NOT NULL DEFAULT 0,
+            notes TEXT,
+            PRIMARY KEY (trade_date, run_type)
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO daily_pnl (trade_date, run_type, realized_pnl, unrealized_pnl, notes)
+        SELECT trade_date, 'paper', realized_pnl, unrealized_pnl, notes
+        FROM daily_pnl_legacy
+        """
+    )
+    conn.execute("DROP TABLE daily_pnl_legacy")
 
 
 @contextmanager
@@ -131,24 +163,35 @@ def record_fill(*, order_id: str, symbol: str, price: float, quantity: int) -> N
         )
 
 
-def get_today_realized_pnl() -> float:
+def get_today_realized_pnl(*, run_type: str | None = None) -> float:
     init_db()
     today = date.today().isoformat()
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT realized_pnl FROM daily_pnl WHERE trade_date = ?",
-            (today,),
-        ).fetchone()
+        if run_type:
+            row = conn.execute(
+                "SELECT realized_pnl FROM daily_pnl WHERE trade_date = ? AND run_type = ?",
+                (today, run_type),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT COALESCE(SUM(realized_pnl), 0) AS realized_pnl FROM daily_pnl WHERE trade_date = ?",
+                (today,),
+            ).fetchone()
     return float(row["realized_pnl"]) if row else 0.0
 
 
-def update_daily_pnl(*, realized_delta: float = 0.0, unrealized: float = 0.0) -> None:
+def update_daily_pnl(
+    *,
+    realized_delta: float = 0.0,
+    unrealized: float = 0.0,
+    run_type: str = "paper",
+) -> None:
     init_db()
     today = date.today().isoformat()
     with _conn() as conn:
         row = conn.execute(
-            "SELECT realized_pnl FROM daily_pnl WHERE trade_date = ?",
-            (today,),
+            "SELECT realized_pnl FROM daily_pnl WHERE trade_date = ? AND run_type = ?",
+            (today, run_type),
         ).fetchone()
         if row:
             new_realized = float(row["realized_pnl"]) + realized_delta
@@ -156,17 +199,17 @@ def update_daily_pnl(*, realized_delta: float = 0.0, unrealized: float = 0.0) ->
                 """
                 UPDATE daily_pnl
                 SET realized_pnl = ?, unrealized_pnl = ?
-                WHERE trade_date = ?
+                WHERE trade_date = ? AND run_type = ?
                 """,
-                (new_realized, unrealized, today),
+                (new_realized, unrealized, today, run_type),
             )
         else:
             conn.execute(
                 """
-                INSERT INTO daily_pnl (trade_date, realized_pnl, unrealized_pnl)
-                VALUES (?, ?, ?)
+                INSERT INTO daily_pnl (trade_date, run_type, realized_pnl, unrealized_pnl)
+                VALUES (?, ?, ?, ?)
                 """,
-                (today, realized_delta, unrealized),
+                (today, run_type, realized_delta, unrealized),
             )
 
 
@@ -287,25 +330,25 @@ def trades_on_date(trade_date: date, *, run_type: str = "paper") -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def record_session_equity(*, equity: float, cash: float, unrealized: float) -> None:
+def record_session_equity(*, equity: float, cash: float, unrealized: float, run_type: str = "paper") -> None:
     """Snapshot end-of-session equity for daily P&L tracking."""
     init_db()
     today = date.today().isoformat()
     with _conn() as conn:
         row = conn.execute(
-            "SELECT realized_pnl FROM daily_pnl WHERE trade_date = ?",
-            (today,),
+            "SELECT realized_pnl FROM daily_pnl WHERE trade_date = ? AND run_type = ?",
+            (today, run_type),
         ).fetchone()
         realized = float(row["realized_pnl"]) if row else 0.0
         conn.execute(
             """
-            INSERT INTO daily_pnl (trade_date, realized_pnl, unrealized_pnl, notes)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(trade_date) DO UPDATE SET
+            INSERT INTO daily_pnl (trade_date, run_type, realized_pnl, unrealized_pnl, notes)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(trade_date, run_type) DO UPDATE SET
                 unrealized_pnl = excluded.unrealized_pnl,
                 notes = excluded.notes
             """,
-            (today, realized, unrealized, f"equity={equity:.2f},cash={cash:.2f}"),
+            (today, run_type, realized, unrealized, f"equity={equity:.2f},cash={cash:.2f}"),
         )
 
 
