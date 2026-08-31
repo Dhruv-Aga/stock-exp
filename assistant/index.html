@@ -12,16 +12,12 @@
     />
     <link rel="stylesheet" href="../style.css" />
     <link rel="stylesheet" href="./assistant.css" />
+    <link rel="stylesheet" href="../src/shell/shell.css" />
   </head>
   <body>
     <div class="container">
-      <nav class="site-nav" aria-label="Main">
-        <a href="/">Screener</a>
-        <a href="/tracker/">Portfolio Tracker</a>
-        <a href="/paper/">Paper Dashboard</a>
-        <a href="/assistant/" aria-current="page">Assistant</a>
-        <a href="/approvals/">Approvals</a>
-      </nav>
+      <div id="shell-nav"></div>
+      <div id="shell-status"></div>
 
       <header class="header">
         <div class="brand">
@@ -35,6 +31,20 @@
 
       <main class="assistant-layout">
         <section class="card assistant-chat" aria-label="Chat">
+          <div class="assistant-prompts" id="quickPrompts">
+            <button class="prompt-chip" type="button" data-prompt="What are my current holdings and positions?">
+              Holdings
+            </button>
+            <button class="prompt-chip" type="button" data-prompt="Run all strategy signals on my configured tickers.">
+              Strategy signals
+            </button>
+            <button class="prompt-chip" type="button" data-prompt="How is my paper portfolio performing vs benchmark?">
+              Benchmark
+            </button>
+            <button class="prompt-chip" type="button" data-prompt="List any pending live trade proposals.">
+              Pending trades
+            </button>
+          </div>
           <div class="chat-messages" id="chatMessages"></div>
           <form class="chat-form" id="chatForm">
             <textarea
@@ -52,14 +62,18 @@
           <p class="sub">The assistant can call these automatically based on your question.</p>
           <ul class="tool-list" id="toolList"></ul>
           <div class="assistant-hint">
-            <strong>Kite portfolio:</strong> configure <code>KITE_*</code> in <code>.env</code><br />
-            <strong>LLM:</strong> configure <code>GROQ_API_KEY</code> in <code>.env</code><br />
-            <strong>Scripts:</strong> add files to <code>scripts/sandbox/</code>
+            <strong>Config:</strong> one <code>.env</code> at repo root<br />
+            <strong>Start:</strong> <code>./scripts/dev.sh start</code><br />
+            <strong>Live trades:</strong> approve at <a href="/approvals/">/approvals/</a>
           </div>
         </aside>
       </main>
     </div>
 
+    <script type="module">
+      import { initShell } from "../src/shell/init.js";
+      initShell({ page: "assistant" });
+    </script>
     <script type="module" src="./assistant.js"></script>
   </body>
 </html>

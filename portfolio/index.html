@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Portfolio monitor for Bharat Scout paper trading — equity, positions, and performance."
+    />
+    <title>Portfolio — Bharat Scout</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="../tracker/tracker.css" />
+    <link rel="stylesheet" href="../src/shell/shell.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div id="shell-nav"></div>
+      <div id="shell-status"></div>
+
+      <header class="header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">📊</div>
+          <div>
+            <h1>Portfolio</h1>
+            <p class="sub" id="generatedAt">Loading portfolio data…</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button class="btn-secondary" type="button" id="refreshPaperBtn">↻ Refresh data</button>
+        </div>
+      </header>
+
+      <div class="portfolio-tabs" role="tablist" aria-label="Portfolio views">
+        <button class="portfolio-tab active" type="button" data-tab="overview" role="tab" aria-selected="true">
+          Overview
+        </button>
+        <button class="portfolio-tab" type="button" data-tab="details" role="tab" aria-selected="false">
+          Full dashboard
+        </button>
+      </div>
+
+      <div class="portfolio-panel" id="panel-overview" role="tabpanel">
+        <div class="tracker-empty hidden" id="emptyState">
+          <h2>No portfolio data yet</h2>
+          <p>
+            Run <code>./scripts/dev.sh paper</code> locally, or wait for the daily CI workflow to publish
+            <code>paper/analysis.json</code>.
+          </p>
+        </div>
+
+        <div class="tracker-error hidden" id="errorState">
+          <h2>Could not load portfolio data</h2>
+          <p id="errorMessage"></p>
+        </div>
+
+        <main class="tracker-main hidden" id="trackerMain">
+          <section class="tracker-kpis" id="kpiCards" aria-label="Portfolio summary"></section>
+
+          <div class="tracker-grid">
+            <section class="card tracker-chart-card">
+              <div class="section-title">
+                <h2>Equity trend</h2>
+              </div>
+              <canvas id="equityChart" height="180"></canvas>
+            </section>
+
+            <section class="card">
+              <div class="section-title">
+                <h2>Open positions</h2>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th>Side</th>
+                      <th>Entry</th>
+                      <th>Mark</th>
+                      <th>Qty</th>
+                      <th>uP&amp;L</th>
+                    </tr>
+                  </thead>
+                  <tbody id="positionsBody"></tbody>
+                </table>
+              </div>
+              <p class="tracker-muted hidden" id="noPositions">No open positions</p>
+            </section>
+          </div>
+
+          <section class="card">
+            <div class="section-title">
+              <h2>Recent closed trades</h2>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Exit</th>
+                    <th>Symbol</th>
+                    <th>Side</th>
+                    <th>P&amp;L</th>
+                    <th>Return</th>
+                  </tr>
+                </thead>
+                <tbody id="tradesBody"></tbody>
+              </table>
+            </div>
+            <p class="tracker-muted hidden" id="noTrades">No closed trades yet</p>
+          </section>
+        </main>
+      </div>
+
+      <div class="portfolio-panel hidden" id="panel-details" role="tabpanel">
+        <iframe
+          class="portfolio-details-frame"
+          id="paperFrame"
+          title="Paper trading dashboard"
+          src="/paper/"
+          loading="lazy"
+        ></iframe>
+      </div>
+
+      <footer class="footer">
+        Bharat Scout • Data from <code>paper/analysis.json</code> • Refresh with <code>./scripts/dev.sh paper</code>
+      </footer>
+    </div>
+
+    <script type="module">
+      import { initShell } from "../src/shell/init.js";
+      initShell({ page: "portfolio" });
+    </script>
+    <script type="module" src="./portfolio.js"></script>
+  </body>
+</html>

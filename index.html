@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Bharat Scout is a responsive NSE stock watchlist and value screener that can run on GitHub Pages with an optional secure Zerodha backend proxy."
+      content="Bharat Scout trading home — portfolio, paper trading, assistant, and approvals in one place."
     />
-    <title>Bharat Scout</title>
+    <title>Trading Home — Bharat Scout</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,146 +15,96 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./src/shell/shell.css" />
   </head>
   <body>
-    <div class="toast-region" id="toastRegion" aria-live="polite"></div>
-
     <div class="container">
-      <nav class="site-nav" aria-label="Main">
-        <a href="/" aria-current="page">Screener</a>
-        <a href="/tracker/">Portfolio Tracker</a>
-        <a href="/paper/">Paper Dashboard</a>
-        <a href="/assistant/">Assistant</a>
-        <a href="/approvals/">Approvals</a>
-      </nav>
+      <div id="shell-nav"></div>
+      <div id="shell-status"></div>
+      <div id="shell-onboarding"></div>
 
       <header class="header">
         <div class="brand">
-          <div class="logo" aria-hidden="true">📈</div>
+          <div class="logo" aria-hidden="true">🏠</div>
           <div>
-            <h1>Bharat Scout</h1>
-            <p class="sub">NSE watchlist + value screener for GitHub Pages</p>
+            <h1>Trading Home</h1>
+            <p class="sub">Paper trading, portfolio, assistant, and live approvals</p>
           </div>
         </div>
-
         <div class="top-actions">
-          <button class="btn-secondary" id="refreshBtn" type="button">🔄 Refresh</button>
-          <button class="btn-secondary" id="autoBtn" type="button">⚡ Auto Refresh OFF</button>
-          <button class="btn-secondary" id="exportBtn" type="button">⬇️ CSV</button>
+          <a class="btn-secondary" href="/assistant/">Ask assistant</a>
         </div>
       </header>
 
-      <main class="layout">
-        <aside class="sidebar">
-          <section class="card">
-            <div class="section-title">
-              <div>
-                <h2>🔌 Data Source</h2>
-                <p class="sub">Use demo mode or your private Kite proxy.</p>
-              </div>
-              <span class="status-badge disconnected" id="status">Demo</span>
-            </div>
+      <div class="approval-banner card hidden" id="pendingBanner"></div>
 
-            <div class="notice">
-              Do not place Zerodha API keys or access tokens in this GitHub Pages app. Add them only to the backend proxy environment.
-            </div>
+      <section class="home-kpis" id="homeKpis" aria-label="Portfolio summary"></section>
 
-            <div class="input-group">
-              <label for="backendUrl">Backend proxy URL</label>
-              <input id="backendUrl" placeholder="https://your-backend.onrender.com" inputmode="url" />
-              <small>Leave blank for local demo data. Set this after deploying the Node proxy.</small>
-            </div>
+      <section class="home-grid" aria-label="Quick actions">
+        <a class="home-card" href="/portfolio/">
+          <span class="icon">📊</span>
+          <h3>Portfolio</h3>
+          <p>Paper equity, positions, and trade history</p>
+        </a>
+        <a class="home-card" href="/assistant/">
+          <span class="icon">🤖</span>
+          <h3>Assistant</h3>
+          <p>Ask about holdings, run strategies, benchmark</p>
+        </a>
+        <a class="home-card" href="/approvals/">
+          <span class="icon">✅</span>
+          <h3>Approvals</h3>
+          <p>Review live trade proposals before Kite execution</p>
+        </a>
+        <a class="home-card" href="/screener/">
+          <span class="icon">📈</span>
+          <h3>Screener</h3>
+          <p>NSE watchlist and value filters</p>
+        </a>
+      </section>
 
-            <div class="connection-actions">
-              <button class="btn-primary" id="saveBackendBtn" type="button">Save Backend</button>
-              <button class="btn-ghost" id="clearBackendBtn" type="button">Use Demo</button>
-            </div>
-          </section>
-
-          <section class="card">
-            <div class="section-title">
-              <h2>➕ Add Stock</h2>
-            </div>
-
-            <form class="add-form" id="addForm">
-              <input id="stockInput" placeholder="TATAMOTORS" list="symbolSuggestions" autocomplete="off" />
-              <button class="btn-primary compact" type="submit">Add</button>
-            </form>
-            <datalist id="symbolSuggestions"></datalist>
-
-            <div class="watchlist" id="watchlist"></div>
-          </section>
-        </aside>
-
-        <section class="card dashboard-card">
-          <div class="section-title dashboard-title">
-            <div>
-              <h2>📊 Screener Dashboard</h2>
-              <p class="sub" id="lastUpdated">Waiting for first refresh…</p>
-            </div>
-            <div class="spinner hidden" id="loadingSpinner" aria-label="Loading"></div>
-          </div>
-
-          <div class="filters">
-            <div>
-              <label for="minROE">Min ROE</label>
-              <input type="number" id="minROE" value="0" min="0" step="0.1" />
-            </div>
-            <div>
-              <label for="maxPE">Max P/E</label>
-              <input type="number" id="maxPE" value="100" min="0" step="0.1" />
-            </div>
-            <div>
-              <label for="searchBox">Search</label>
-              <input id="searchBox" placeholder="Search stock or company…" />
-            </div>
-            <div>
-              <label for="sortSelect">Sort By</label>
-              <select id="sortSelect">
-                <option value="score">Value Score</option>
-                <option value="change">Top Gainers</option>
-                <option value="roe">ROE</option>
-                <option value="pe">Low P/E</option>
-                <option value="symbol">Symbol</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="toolbar" aria-label="Preset filters">
-            <button class="tag active" data-preset="value" type="button">💎 Value Investing</button>
-            <button class="tag" data-preset="profitable" type="button">📈 Profitable</button>
-            <button class="tag" data-preset="quality" type="button">⭐ Strong Fundamentals</button>
-          </div>
-
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Symbol</th>
-                  <th>Company</th>
-                  <th>LTP</th>
-                  <th>Chg%</th>
-                  <th>P/E</th>
-                  <th>ROE</th>
-                  <th>Margin</th>
-                  <th>Score</th>
-                </tr>
-              </thead>
-              <tbody id="tableBody"></tbody>
-            </table>
-          </div>
-
-          <div class="empty-state hidden" id="emptyState">
-            No stocks match the current filters. Try lowering ROE, increasing P/E, or adding a symbol.
-          </div>
-        </section>
-      </main>
+      <section class="card">
+        <h2>Local commands</h2>
+        <p class="sub">One config file (<code>.env</code>) and one launcher script.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Command</th>
+                <th>What it does</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>./scripts/dev.sh setup</code></td>
+                <td>First-time install, sync config, health check</td>
+              </tr>
+              <tr>
+                <td><code>./scripts/dev.sh start</code></td>
+                <td>Start agent API + frontend</td>
+              </tr>
+              <tr>
+                <td><code>./scripts/dev.sh paper</code></td>
+                <td>Run paper session and refresh portfolio</td>
+              </tr>
+              <tr>
+                <td><code>./scripts/dev.sh status</code></td>
+                <td>Show what's running</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <footer class="footer">
-        Bharat Scout • Static frontend ready for GitHub Pages • Real Kite data requires the included backend proxy
+        Bharat Scout • See <code>LOCAL.md</code> for setup • <code>python3 check_setup.py</code> for diagnostics
       </footer>
     </div>
 
-    <script type="module" src="./src/app.js"></script>
+    <script type="module">
+      import { initShell } from "./src/shell/init.js";
+      initShell({ page: "home", showStatus: true, showOnboarding: true });
+    </script>
+    <script type="module" src="./home/home.js"></script>
   </body>
 </html>

@@ -12,16 +12,12 @@
     />
     <link rel="stylesheet" href="../style.css" />
     <link rel="stylesheet" href="./approvals.css" />
+    <link rel="stylesheet" href="../src/shell/shell.css" />
   </head>
   <body>
     <div class="container">
-      <nav class="site-nav" aria-label="Main">
-        <a href="/">Screener</a>
-        <a href="/tracker/">Portfolio Tracker</a>
-        <a href="/paper/">Paper Dashboard</a>
-        <a href="/assistant/">Assistant</a>
-        <a href="/approvals/" aria-current="page">Approvals</a>
-      </nav>
+      <div id="shell-nav"></div>
+      <div id="shell-status"></div>
 
       <header class="header">
         <div class="brand">
@@ -47,6 +43,10 @@
       </main>
     </div>
 
+    <script type="module">
+      import { initShell } from "../src/shell/init.js";
+      initShell({ page: "approvals" });
+    </script>
     <script type="module" src="./approvals.js"></script>
   </body>
 </html>

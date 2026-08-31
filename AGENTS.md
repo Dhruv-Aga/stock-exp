@@ -53,16 +53,20 @@ The assistant can **propose** trades and analyze portfolios. It **cannot approve
 
 | Route | Page |
 |-------|------|
-| `/` | Screener |
-| `/tracker/` | Paper portfolio snapshot |
-| `/paper/` | Full paper dashboard |
+| `/` | Trading home (status, quick actions, setup checklist) |
+| `/portfolio/` | Portfolio overview + full paper dashboard |
+| `/screener/` | Stock screener |
 | `/assistant/` | LLM chat with tools |
 | `/approvals/` | Approve/reject live trades |
+
+Legacy `/tracker/` redirects to `/portfolio/`.
 
 ## Local development
 
 ```bash
-./.cursor/install.sh
-python3 run_agent_api.py
-python3 -m http.server 8080
+cp .env.example .env
+./scripts/dev.sh setup
+./scripts/dev.sh start
 ```
+
+See `LOCAL.md` for full details. One `.env` file configures everything.
