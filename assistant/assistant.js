@@ -1,4 +1,5 @@
 import { agentUrl } from "../src/shell/config.js";
+import { url } from "../src/shell/paths.js";
 
 const CAPABILITY_GROUPS = [
   {
@@ -95,7 +96,7 @@ function proposalCardFromTools(toolsUsed) {
     if (proposal.status === "executed") {
       return `<div class="proposal-inline-card">Trade auto-approved and executed. Proposal <code>${escapeHtml(proposal.id.slice(0, 8))}…</code></div>`;
     }
-    return `<div class="proposal-inline-card">Trade proposed — <a href="/approvals/">Review in Approvals →</a> (id: <code>${escapeHtml(proposal.id.slice(0, 8))}…</code>)</div>`;
+    return `<div class="proposal-inline-card">Trade proposed — <a href="${url("/approvals/")}">Review in Approvals →</a> (id: <code>${escapeHtml(proposal.id.slice(0, 8))}…</code>)</div>`;
   }
   return "";
 }

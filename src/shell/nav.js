@@ -1,5 +1,7 @@
 /** Shared navigation for all Bharat Scout pages. */
 
+import { url } from "./paths.js";
+
 export const NAV_ITEMS = [
   { id: "home", label: "Home", href: "/" },
   { id: "portfolio", label: "Portfolio", href: "/portfolio/" },
@@ -21,7 +23,7 @@ export function mountNav(container, currentId, badges = {}) {
 
   for (const item of NAV_ITEMS) {
     const a = document.createElement("a");
-    a.href = item.href;
+    a.href = url(item.href);
     a.textContent = item.label;
     if (item.secondary) {
       a.classList.add("nav-secondary");

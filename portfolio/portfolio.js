@@ -1,4 +1,6 @@
-const ANALYSIS_URL = "/paper/analysis.json";
+import { url } from "../src/shell/paths.js";
+
+const ANALYSIS_URL = url("/paper/analysis.json");
 
 const elements = {
   emptyState: document.querySelector("#emptyState"),
@@ -277,7 +279,7 @@ window.addEventListener("hashchange", () => {
 elements.refreshPaperBtn?.addEventListener("click", () => {
   loadPortfolio();
   const frame = document.querySelector("#paperFrame");
-  if (frame) frame.src = "/paper/?t=" + Date.now();
+  if (frame) frame.src = url("/paper/?t=" + Date.now());
 });
 
 loadPortfolio();

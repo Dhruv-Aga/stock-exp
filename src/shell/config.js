@@ -3,6 +3,8 @@
  * Override at runtime: window.AGENT_API_URL = "http://..."
  */
 
+import { url } from "./paths.js";
+
 const host = window.location.hostname || "localhost";
 
 export const CONFIG = {
@@ -10,7 +12,9 @@ export const CONFIG = {
   frontendPort: 8080,
   agentPort: 8000,
   kiteProxyPort: 3000,
-  analysisUrl: "/paper/analysis.json",
+  get analysisUrl() {
+    return url("/paper/analysis.json");
+  },
 };
 
 export function agentUrl(path) {

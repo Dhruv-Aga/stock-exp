@@ -1,4 +1,5 @@
 import { agentUrl } from "../src/shell/config.js";
+import { url } from "../src/shell/paths.js";
 
 const listEl = document.querySelector("#proposalList");
 const statusEl = document.querySelector("#approvalStatus");
@@ -99,7 +100,7 @@ async function loadProposals() {
         <div class="empty-approvals">
           <p>No pending trade proposals.</p>
           <p class="sub">Paper is running — shadow and live proposals appear here when strategies signal.</p>
-          <p class="sub"><a href="/">← Back to Trading Home</a> · <a href="/portfolio/">View portfolio</a></p>
+          <p class="sub"><a href="${url("/")}">← Back to Trading Home</a> · <a href="${url("/portfolio/")}">View portfolio</a></p>
         </div>`;
       return;
     }

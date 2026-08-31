@@ -1,4 +1,5 @@
 import { agentUrl } from "../src/shell/config.js";
+import { url } from "../src/shell/paths.js";
 
 function money(value) {
   const num = Number(value);
@@ -97,7 +98,7 @@ async function loadHome() {
   if (!summary) {
     offlineEl?.classList.remove("hidden");
     try {
-      const res = await fetch("/paper/analysis.json", { cache: "no-store" });
+      const res = await fetch(url("/paper/analysis.json"), { cache: "no-store" });
       if (res.ok) {
         const analysis = await res.json();
         summary = {
@@ -127,7 +128,7 @@ async function loadHome() {
     pendingEl.classList.remove("hidden");
     pendingEl.innerHTML = `
       <strong>Action required:</strong> ${pending} trade proposal${pending === 1 ? "" : "s"}
-      waiting for review. <a href="/approvals/">Go to Review →</a>`;
+      waiting for review. <a href="${url("/approvals/")}">Go to Review →</a>`;
   }
 
   if (kpiEl) {

@@ -1,4 +1,5 @@
 import { agentUrl } from "./config.js";
+import { url } from "./paths.js";
 
 function pill(label, ok, detail = "") {
   const cls = ok ? "status-pill ok" : "status-pill warn";
@@ -27,7 +28,7 @@ export async function mountStatusStrip(container) {
     return data;
   } catch {
     try {
-      const analysisRes = await fetch("/paper/analysis.json", { cache: "no-store" });
+      const analysisRes = await fetch(url("/paper/analysis.json"), { cache: "no-store" });
       const analysis = analysisRes.ok ? await analysisRes.json() : {};
       renderStatus(
         container,
@@ -77,7 +78,7 @@ function renderStatus(container, data, agentOnline) {
 
   const pending = Number(agent.pending_proposals || 0);
   if (pending > 0) {
-    parts.push(`<a class="status-pill alert" href="/approvals/">${pending} pending approval${pending === 1 ? "" : "s"}</a>`);
+    parts.push(`<a class="status-pill alert" href="${url("/approvals/")}">${pending} pending approval${pending === 1 ? "" : "s"}</a>`);
   }
 
   if (portfolio.equity != null) {
