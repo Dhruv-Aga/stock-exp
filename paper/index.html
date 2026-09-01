@@ -34,18 +34,21 @@
 <script>if(window.self===window.top){window.location.replace((window.__BASE_PATH__||'')+'/portfolio/#details');}</script>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
-  var bp=window.__BASE_PATH__||'';
-  document.querySelectorAll('a[href^="/"]').forEach(function(a){a.href=bp+a.getAttribute('href');});
+var bp=window.__BASE_PATH__||'';
+document.querySelectorAll('a[href^="/"]').forEach(function(a){a.href=bp+a.getAttribute('href');});
 });
 </script>
 <nav class="site-nav">
-<a href="/">← Bharat Scout</a>
-<a href="/tracker/">Portfolio Tracker</a>
-<a href="/paper/">Paper Dashboard</a>
+<a href="/">Home</a>
+<a href="/portfolio/">Portfolio</a>
+<a href="/portfolio/#details">Full dashboard</a>
+<a href="/screener/">Research</a>
+<a href="/assistant/">Ask</a>
+<a href="/approvals/">Review</a>
 </nav>
 <header>
 <h1>India Trading Bot — Paper Dashboard</h1>
-<div class="meta">Generated: 2026-08-31 18:59</div>
+<div class="meta">Generated: 2026-09-01 15:00</div>
 </header>
 <div class="cards">
 <div class="card small"><div class="muted">Equity</div><div><strong>Rs 100,000</strong></div></div>
@@ -75,8 +78,8 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="card"><h3>Positions</h3>
 <table>
 <tr><th>Symbol</th><th>Side</th><th>Entry</th><th>Mark</th><th>Qty</th><th>uP&L</th></tr>
-<tr><td>VISL.NS</td><td>LONG</td><td>Rs 37</td><td>Rs 37</td><td>676.04</td><td class="pos-positive">Rs 0</td></tr>
-<tr><td>BHEL.NS</td><td>LONG</td><td>Rs 443</td><td>Rs 443</td><td>56.48</td><td class="pos-positive">Rs 0</td></tr>
+<tr><td>VISL.NS</td><td>LONG</td><td>Rs 36</td><td>Rs 36</td><td>704.23</td><td class="pos-positive">Rs 0</td></tr>
+<tr><td>BHEL.NS</td><td>LONG</td><td>Rs 427</td><td>Rs 427</td><td>58.61</td><td class="pos-positive">Rs 0</td></tr>
 </table>
 </div>
 <div class="card"><h3>Symbol summary</h3>
@@ -88,7 +91,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <div class="muted">No closed trades</div>
 </div>
 <script>
-const equityLabels = ["2026-08-31"];
+const equityLabels = ["2026-09-01"];
 const equityData = [100000.0];
 const tradesLabels = [];
 const tradesData = [];
