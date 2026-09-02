@@ -13,9 +13,22 @@ PAPER_SESSION_MARKERS = (
     "generate_dashboard.py",
     "paper_trader",
     "run_paper_session",
-    "scripts/dev.sh paper",
-    "scripts/dev.ps1 paper",
+    "dev.sh paper",
+    "dev.ps1 paper",
 )
+
+
+def _executable_workflow_text(text: str) -> str:
+    """Drop YAML comments so docs about local paper runs are not treated as jobs."""
+    lines = []
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("#"):
+            continue
+        if "#" in line:
+            line = line[: line.index("#")]
+        lines.append(line)
+    return "\n".join(lines)
 
 
 def test_daily_report_workflow_removed():
@@ -23,7 +36,9 @@ def test_daily_report_workflow_removed():
 
 
 def test_pages_workflow_is_static_only():
-    pages = (WORKFLOWS / "pages.yml").read_text(encoding="utf-8")
+    pages = _executable_workflow_text(
+        (WORKFLOWS / "pages.yml").read_text(encoding="utf-8")
+    )
     assert "deploy-pages" in pages
     for marker in PAPER_SESSION_MARKERS:
         assert marker not in pages, f"pages.yml must not run paper trading ({marker})"
@@ -34,7 +49,7 @@ def test_no_workflow_runs_paper_trading():
     assert yaml_files, "expected at least one GitHub workflow"
     offenders = []
     for path in yaml_files:
-        text = path.read_text(encoding="utf-8")
+        text = _executable_workflow_text(path.read_text(encoding="utf-8"))
         for marker in PAPER_SESSION_MARKERS:
             if marker in text:
                 offenders.append(f"{path.name}: {marker}")
