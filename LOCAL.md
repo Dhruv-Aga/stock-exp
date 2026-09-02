@@ -87,3 +87,20 @@ Optional with `START_KITE_PROXY=1`:
 | Port in use | `FRONTEND_PORT=8081 ./scripts/dev.sh start` |
 
 Run `./scripts/dev.sh setup` or `python3 check_setup.py` anytime for a full diagnostic.
+
+## Paper trading is local-only
+
+Paper sessions, dashboard refreshes, and daily report emails run on your machine. GitHub Actions only deploys already-committed static files (manual **Deploy static frontend to GitHub Pages**).
+
+```bash
+./scripts/dev.sh paper                 # one session + dashboard refresh
+python run_daily_report.py --email     # session + optional SMTP email
+```
+
+Optional local cron (example: weekdays 09:20 IST after the open):
+
+```cron
+20 9 * * 1-5 cd /path/to/stock-exp && ./scripts/dev.sh paper
+```
+
+Do not add a GitHub Actions schedule or `workflow_dispatch` job that calls `run_paper.py`, `run_daily_report.py`, or `scripts/generate_dashboard.py`.

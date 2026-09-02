@@ -1,7 +1,8 @@
 name: Deploy static frontend to GitHub Pages
 
-# Manual fallback deploy. The scheduled daily-report workflow is the primary
-# Pages deployer (repo root: Bharat Scout + /tracker/ + /paper/).
+# Static site only. Paper trading must not run in GitHub Actions — refresh
+# locally with `./scripts/dev.sh paper` (or `./scripts/dev.ps1 paper`) or a
+# local cron job, then commit the generated snapshot if you want it on Pages.
 on:
   workflow_dispatch:
 
