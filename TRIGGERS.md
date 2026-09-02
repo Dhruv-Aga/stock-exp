@@ -189,6 +189,22 @@ python run_paper.py
 
 Check the session output for alert summaries, then review at `/api/triggers/alerts`.
 
+## Scheduling
+
+Install the Windows tasks with:
+
+```bat
+install_scheduled_tasks.bat
+```
+
+The `IndiaTradingBot Portfolio Triggers` task runs `run_triggers.bat` every
+30 minutes. It performs detection and LLM analysis independently of the
+morning/evening email reports. Logs are written to `data/logs/`.
+
+The task runs every 30 minutes all day. If checks should be restricted to
+market hours, use Windows Task Scheduler conditions or adjust the task
+schedule after installation.
+
 ## Configuration
 
 Customize detection thresholds by calling the check endpoint:
