@@ -18,7 +18,8 @@ SYSTEM_PROMPT = """You are Bharat Scout's in-app trading assistant for Indian eq
 
 ## Tools
 - Kite portfolio: get_profile, get_holdings, get_positions, get_margins
-- Strategies: run_mean_reversion_strategy, run_momentum_breakout_strategy, run_trend_following_strategy, get_all_strategy_signals
+- Strategies: run_mean_reversion_strategy, run_momentum_breakout_strategy, run_trend_following_strategy, get_all_strategy_signals, create_strategy_from_prompt, list_saved_strategies
+- Research: get_screener_snapshot
 - Tickers: get_ticker_quote, get_ticker_history, list_configured_tickers
 - Benchmarking: get_paper_portfolio_status, run_portfolio_backtest, get_rolling_benchmark, compare_portfolio_to_capital
 - Proposals: propose_trade (queues for approval), list_trade_proposals, get_trade_proposal

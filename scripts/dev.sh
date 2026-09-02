@@ -9,6 +9,7 @@ DEV_DIR="$ROOT/.dev"
 AGENT_PID="$DEV_DIR/agent.pid"
 FRONTEND_PID="$DEV_DIR/frontend.pid"
 KITE_PID="$DEV_DIR/kite.pid"
+HOST_BIND="${HOST_BIND:-0.0.0.0}"
 FRONTEND_PORT="${FRONTEND_PORT:-8080}"
 AGENT_PORT="${AGENT_API_PORT:-8000}"
 KITE_PORT="${KITE_PROXY_PORT:-3000}"
@@ -76,12 +77,13 @@ cmd_start() {
   fi
   sleep 1
 
-  echo "Starting agent API on :$AGENT_PORT ..."
-  nohup python3 "$ROOT/run_agent_api.py" >"$DEV_DIR/agent.log" 2>&1 &
+  export HOST_BIND
+  echo "Starting agent API on $HOST_BIND:$AGENT_PORT ..."
+  nohup env HOST_BIND="$HOST_BIND" python3 "$ROOT/run_agent_api.py" >"$DEV_DIR/agent.log" 2>&1 &
   echo $! >"$AGENT_PID"
 
-  echo "Starting frontend on :$FRONTEND_PORT ..."
-  nohup python3 -m http.server "$FRONTEND_PORT" --bind 0.0.0.0 >"$DEV_DIR/frontend.log" 2>&1 &
+  echo "Starting frontend on $HOST_BIND:$FRONTEND_PORT ..."
+  nohup python3 -m http.server "$FRONTEND_PORT" --bind "$HOST_BIND" >"$DEV_DIR/frontend.log" 2>&1 &
   echo $! >"$FRONTEND_PID"
 
   if [ "${START_KITE_PROXY:-0}" = "1" ]; then
@@ -100,6 +102,13 @@ cmd_start() {
   echo "  http://localhost:$FRONTEND_PORT/approvals/   Review live trades"
   echo "  http://localhost:$FRONTEND_PORT/compare/     Paper vs live A/B"
   echo "  http://localhost:$FRONTEND_PORT/screener/    Stock screener"
+  if [ "$HOST_BIND" = "0.0.0.0" ] || [ "$HOST_BIND" = "::" ]; then
+    for ip in $(hostname -I 2>/dev/null || ipconfig getifaddr 2>/dev/null || true); do
+      if printf '%s' "$ip" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+        echo "  http://$ip:$FRONTEND_PORT/                   Home network"
+      fi
+    done
+  fi
   echo ""
   echo "Logs: $DEV_DIR/*.log"
   echo "Stop: ./scripts/dev.sh stop"
@@ -164,6 +173,7 @@ usage() {
   echo "  ab        Run paper vs live-shadow A/B comparison"
   echo ""
   echo "Environment (optional):"
+  echo "  HOST_BIND=0.0.0.0    Bind frontend & API to all adapters for LAN access"
   echo "  FRONTEND_PORT=8080   AGENT_API_PORT=8000   KITE_PROXY_PORT=3000"
   echo "  START_KITE_PROXY=1   Also start server/ quote proxy"
   echo ""

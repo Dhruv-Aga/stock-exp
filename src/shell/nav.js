@@ -21,6 +21,23 @@ export function mountNav(container, currentId, badges = {}) {
   nav.className = "site-nav";
   nav.setAttribute("aria-label", "Main");
 
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "nav-toggle";
+  toggle.setAttribute("aria-label", "Toggle navigation");
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.innerHTML = '<span></span><span></span><span></span>';
+
+  const statusToggle = document.createElement("button");
+  statusToggle.type = "button";
+  statusToggle.className = "status-toggle";
+  statusToggle.setAttribute("aria-label", "Toggle status strip");
+  statusToggle.setAttribute("aria-expanded", "false");
+  statusToggle.textContent = "Status";
+
+  const links = document.createElement("div");
+  links.className = "nav-links";
+
   for (const item of NAV_ITEMS) {
     const a = document.createElement("a");
     a.href = url(item.href);
@@ -38,8 +55,23 @@ export function mountNav(container, currentId, badges = {}) {
       badge.textContent = String(count);
       a.appendChild(badge);
     }
-    nav.appendChild(a);
+    links.appendChild(a);
   }
 
+  toggle.addEventListener("click", () => {
+    const isOpen = nav.classList.toggle("nav-open");
+    toggle.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  statusToggle.addEventListener("click", () => {
+    const statusStrip = document.querySelector("#shell-status");
+    if (!statusStrip) return;
+    const isOpen = statusStrip.classList.toggle("is-open");
+    statusToggle.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  nav.appendChild(toggle);
+  nav.appendChild(links);
+  nav.appendChild(statusToggle);
   container.replaceChildren(nav);
 }

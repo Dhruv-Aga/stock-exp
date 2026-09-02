@@ -42,9 +42,20 @@ const elements = {
   sendBtn: document.querySelector("#sendBtn"),
   agentStatus: document.querySelector("#agentStatus"),
   capabilityGroups: document.querySelector("#capabilityGroups"),
+  sessionList: document.querySelector("#sessionList"),
+  newChatBtn: document.querySelector("#newChatBtn"),
+  sessionHistoryToggle: document.querySelector("#sessionHistoryToggle"),
+  sessionDropdown: document.querySelector("#sessionDropdown"),
 };
 
+const CHAT_SESSIONS_KEY = "bharat-scout:assistant-chat-sessions";
+const ACTIVE_SESSION_KEY = "bharat-scout:assistant-active-session";
+const WELCOME_MESSAGE =
+  "Hi! I can check your portfolio, run strategies, benchmark performance, and propose live trades for your review. What would you like to know?";
+
 const history = [];
+let chatSessions = [];
+let activeSessionId = null;
 
 function escapeHtml(value) {
   return String(value)
@@ -53,12 +64,40 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;");
 }
 
+function createSession(title = "New chat") {
+  const id = globalThis.crypto?.randomUUID?.() ?? `session-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return {
+    id,
+    title,
+    updatedAt: new Date().toISOString(),
+    messages: [],
+  };
+}
+
+function renderMarkdown(text) {
+  const source = String(text ?? "");
+  if (!source.trim()) return "";
+
+  const parser = typeof window !== "undefined" ? window.marked : undefined;
+  if (!parser) {
+    return escapeHtml(source).replace(/\n/g, "<br>");
+  }
+
+  const html = parser.parse(source, { breaks: true, gfm: true });
+  if (typeof window !== "undefined" && window.DOMPurify) {
+    return window.DOMPurify.sanitize(html);
+  }
+
+  return html;
+}
+
 function addBubble(role, text, extraHtml = "") {
   const div = document.createElement("div");
   div.className = `chat-bubble ${role}`;
-  const textNode = document.createElement("div");
-  textNode.textContent = text;
-  div.appendChild(textNode);
+  const content = document.createElement("div");
+  content.className = "chat-content";
+  content.innerHTML = renderMarkdown(text);
+  div.appendChild(content);
   if (extraHtml) {
     const meta = document.createElement("div");
     meta.className = "tools-used";
@@ -67,6 +106,285 @@ function addBubble(role, text, extraHtml = "") {
   }
   elements.chatMessages.appendChild(div);
   elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+}
+
+function getActiveSession() {
+  return chatSessions.find((session) => session.id === activeSessionId) ?? chatSessions[chatSessions.length - 1] ?? null;
+}
+
+async function saveSessionToServer(session) {
+  if (!session?.id) return;
+  try {
+    await fetch(agentUrl(`/api/agent/sessions/${session.id}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: session.title || "New chat",
+        messages: session.messages ?? [],
+        metadata: { source: "web-ui" },
+      }),
+    });
+  } catch (error) {
+    console.warn("Failed to persist session to DB", error);
+  }
+}
+
+function persistSessions() {
+  localStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(chatSessions));
+  if (activeSessionId) {
+    localStorage.setItem(ACTIVE_SESSION_KEY, activeSessionId);
+  }
+  const activeSession = getActiveSession();
+  if (activeSession) {
+    void saveSessionToServer(activeSession);
+  }
+}
+
+async function loadSessions() {
+  try {
+    const res = await fetch(agentUrl("/api/agent/sessions"));
+    if (res.ok) {
+      const data = await res.json();
+      const sessions = Array.isArray(data.sessions) ? data.sessions : [];
+      if (sessions.length) {
+        chatSessions = sessions.map((session) => ({
+          id: session.id,
+          title: session.title || "New chat",
+          updatedAt: session.updated_at || session.created_at || new Date().toISOString(),
+          messages: Array.isArray(session.messages) ? session.messages : [],
+        }));
+        const savedActiveId = localStorage.getItem(ACTIVE_SESSION_KEY) || chatSessions[0].id;
+        const activeSession = chatSessions.find((session) => session.id === savedActiveId) ?? chatSessions[0];
+        activeSessionId = activeSession.id;
+        history.splice(0, history.length, ...(activeSession.messages ?? []));
+        persistSessions();
+        return;
+      }
+    }
+  } catch (error) {
+    console.warn("Unable to load DB-backed chat sessions, falling back to local storage", error);
+  }
+
+  try {
+    const raw = localStorage.getItem(CHAT_SESSIONS_KEY);
+    chatSessions = raw ? JSON.parse(raw) : [];
+  } catch {
+    chatSessions = [];
+  }
+
+  if (!chatSessions.length) {
+    const initialSession = createSession();
+    chatSessions = [initialSession];
+    activeSessionId = initialSession.id;
+    persistSessions();
+    return;
+  }
+
+  const savedActiveId = localStorage.getItem(ACTIVE_SESSION_KEY);
+  const activeSession = chatSessions.find((session) => session.id === savedActiveId) ?? chatSessions[chatSessions.length - 1];
+  activeSessionId = activeSession.id;
+  history.splice(0, history.length, ...(activeSession.messages ?? []));
+}
+
+function getSessionPreview(session) {
+  const messages = Array.isArray(session?.messages) ? session.messages : [];
+  const latestText = [...messages].reverse().find((message) => message?.content)?.content ?? "";
+  const trimmed = String(latestText).replace(/\s+/g, " ").trim();
+  return trimmed ? trimmed.slice(0, 90) + (trimmed.length > 90 ? "…" : "") : "No messages yet";
+}
+
+function renderSessionList() {
+  if (elements.sessionList) {
+    const orderedSessions = [...chatSessions].sort((left, right) => new Date(right.updatedAt) - new Date(left.updatedAt));
+    elements.sessionList.innerHTML = orderedSessions
+      .map((session) => {
+        const isActive = session.id === activeSessionId;
+        const title = escapeHtml(session.title || "New chat");
+        const preview = escapeHtml(getSessionPreview(session));
+        const count = Array.isArray(session.messages) ? session.messages.length : 0;
+        const date = new Date(session.updatedAt).toLocaleString([], {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        });
+
+        return `
+          <div class="session-card ${isActive ? "active" : ""}">
+            <button class="session-item ${isActive ? "active" : ""}" type="button" data-session-id="${escapeHtml(session.id)}">
+              <span class="session-badge ${isActive ? "active" : ""}" aria-hidden="true"></span>
+              <span class="session-body">
+                <span class="session-title">${title}</span>
+                <span class="session-preview">${preview}</span>
+                <span class="session-meta-row">
+                  <span class="session-meta">${escapeHtml(date)}</span>
+                  <span class="session-count">${count} msgs</span>
+                </span>
+              </span>
+            </button>
+            <button class="session-delete" type="button" data-delete-session-id="${escapeHtml(session.id)}" aria-label="Delete chat session">
+              Delete
+            </button>
+          </div>
+        `;
+      })
+      .join("");
+
+    elements.sessionList.querySelectorAll("[data-session-id]").forEach((button) => {
+      button.addEventListener("click", () => {
+        openSession(button.dataset.sessionId);
+      });
+    });
+
+    elements.sessionList.querySelectorAll("[data-delete-session-id]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const sessionId = button.dataset.deleteSessionId;
+        if (!sessionId) return;
+        const session = chatSessions.find((entry) => entry.id === sessionId);
+        const label = session?.title ? `"${session.title}"` : "this chat";
+        if (window.confirm(`Delete ${label}?`)) {
+          deleteSession(sessionId);
+        }
+      });
+    });
+  }
+
+  if (elements.sessionDropdown) {
+    const orderedSessions = [...chatSessions].sort((left, right) => new Date(right.updatedAt) - new Date(left.updatedAt));
+    elements.sessionDropdown.innerHTML = orderedSessions
+      .map((session) => {
+        const isActive = session.id === activeSessionId;
+        const title = escapeHtml(session.title || "New chat");
+        const preview = escapeHtml(getSessionPreview(session));
+        const date = new Date(session.updatedAt).toLocaleString([], {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        });
+
+        return `
+          <button class="session-menu-item ${isActive ? "active" : ""}" type="button" data-session-id="${escapeHtml(session.id)}">
+            <span class="session-menu-title">${title}</span>
+            <span class="session-menu-preview">${preview}</span>
+            <span class="session-menu-meta">${escapeHtml(date)}</span>
+          </button>
+        `;
+      })
+      .join("");
+
+    elements.sessionDropdown.querySelectorAll("[data-session-id]").forEach((button) => {
+      button.addEventListener("click", () => {
+        openSession(button.dataset.sessionId);
+        closeSessionDropdown();
+      });
+    });
+  }
+}
+
+function renderMessages() {
+  elements.chatMessages.innerHTML = "";
+  const activeSession = getActiveSession();
+  const messages = activeSession?.messages ?? history;
+
+  if (!messages.length) {
+    addBubble("assistant", WELCOME_MESSAGE);
+    return;
+  }
+
+  for (const message of messages) {
+    const extra = message.role === "assistant" ? getMessageMeta(message) : "";
+    addBubble(message.role, message.content, extra);
+  }
+}
+
+function openSession(sessionId) {
+  const session = chatSessions.find((entry) => entry.id === sessionId);
+  if (!session) return;
+
+  activeSessionId = sessionId;
+  history.splice(0, history.length, ...(session.messages ?? []));
+  persistSessions();
+  renderSessionList();
+  renderMessages();
+}
+
+function deleteSession(sessionId) {
+  const index = chatSessions.findIndex((entry) => entry.id === sessionId);
+  if (index === -1) return;
+
+  chatSessions.splice(index, 1);
+  if (activeSessionId === sessionId) {
+    const fallback = chatSessions[0] ?? createSession("New chat");
+    activeSessionId = fallback.id;
+    history.splice(0, history.length, ...(fallback.messages ?? []));
+  }
+
+  if (chatSessions.length === 0) {
+    const newSession = createSession("New chat");
+    chatSessions.push(newSession);
+    activeSessionId = newSession.id;
+    history.splice(0, history.length);
+  }
+
+  persistSessions();
+  renderSessionList();
+  renderMessages();
+}
+
+function newChatSession() {
+  const session = createSession("New chat");
+  chatSessions.push(session);
+  activeSessionId = session.id;
+  history.splice(0, history.length);
+  persistSessions();
+  renderSessionList();
+  renderMessages();
+  closeSessionDropdown();
+}
+
+function toggleSessionDropdown() {
+  if (!elements.sessionDropdown) return;
+  const isOpen = elements.sessionDropdown.classList.contains("open");
+  if (isOpen) {
+    closeSessionDropdown();
+    return;
+  }
+  elements.sessionDropdown.classList.add("open");
+  elements.sessionHistoryToggle?.setAttribute("aria-expanded", "true");
+}
+
+function closeSessionDropdown() {
+  if (!elements.sessionDropdown) return;
+  elements.sessionDropdown.classList.remove("open");
+  elements.sessionHistoryToggle?.setAttribute("aria-expanded", "false");
+}
+
+function syncActiveSession() {
+  const activeSession = getActiveSession();
+  if (!activeSession) return;
+
+  activeSession.messages = [...history];
+  activeSession.updatedAt = new Date().toISOString();
+
+  const latestUserText = [...history].reverse().find((message) => message.role === "user")?.content;
+  if (latestUserText) {
+    activeSession.title = latestUserText.trim().replace(/\s+/g, " ").slice(0, 40) || "New chat";
+  }
+
+  persistSessions();
+  renderSessionList();
+}
+
+function getMessageMeta(message) {
+  if (!Array.isArray(message.toolsUsed) || !message.toolsUsed.length) {
+    return "";
+  }
+
+  const toolsMeta = `Tools: ${message.toolsUsed.map((tool) => tool.tool).join(", ")}`;
+  const proposalCard = proposalCardFromTools(message.toolsUsed);
+  return [toolsMeta, proposalCard].filter(Boolean).join("");
 }
 
 function renderCapabilityGroups() {
@@ -121,6 +439,7 @@ async function loadHealth() {
 
 async function sendMessage(text) {
   history.push({ role: "user", content: text });
+  syncActiveSession();
   addBubble("user", text);
 
   elements.sendBtn.disabled = true;
@@ -139,7 +458,13 @@ async function sendMessage(text) {
 
     const data = await res.json();
     const reply = data.reply || "No response.";
-    history.push({ role: "assistant", content: reply });
+    const assistantMessage = {
+      role: "assistant",
+      content: reply,
+      toolsUsed: data.tools_used || [],
+    };
+    history.push(assistantMessage);
+    syncActiveSession();
 
     const toolsMeta =
       data.tools_used?.length > 0
@@ -179,10 +504,26 @@ document.querySelector("#quickPrompts")?.addEventListener("click", (event) => {
   sendMessage(chip.dataset.prompt);
 });
 
-addBubble(
-  "assistant",
-  "Hi! I can check your portfolio, run strategies, benchmark performance, and propose live trades for your review. What would you like to know?"
-);
+elements.newChatBtn?.addEventListener("click", () => {
+  newChatSession();
+});
 
+elements.sessionHistoryToggle?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  toggleSessionDropdown();
+});
+
+document.addEventListener("click", (event) => {
+  const toggle = elements.sessionHistoryToggle;
+  const dropdown = elements.sessionDropdown;
+  if (!toggle || !dropdown) return;
+  if (!toggle.contains(event.target) && !dropdown.contains(event.target)) {
+    closeSessionDropdown();
+  }
+});
+
+loadSessions();
+renderSessionList();
+renderMessages();
 renderCapabilityGroups();
 loadHealth();

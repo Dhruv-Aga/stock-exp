@@ -36,11 +36,13 @@ The assistant can **propose** trades and analyze portfolios. It **cannot approve
 | `AUTO_APPROVE_TRADES=true` | Auto-execute live proposals (audit trail kept; shadow/paper proposals still manual) |
 | `SHADOW_LIVE_PROPOSALS=true` | Paper sessions queue shadow live proposals |
 
-### Tools (20)
+### Tools (23)
 
 **Kite portfolio:** `get_profile`, `get_holdings`, `get_positions`, `get_margins`
 
-**Strategies:** `run_mean_reversion_strategy`, `run_momentum_breakout_strategy`, `run_trend_following_strategy`, `get_all_strategy_signals`
+**Strategies:** `run_mean_reversion_strategy`, `run_momentum_breakout_strategy`, `run_trend_following_strategy`, `get_all_strategy_signals`, `create_strategy_from_prompt`, `list_saved_strategies`
+
+**Research:** `get_screener_snapshot`
 
 **Tickers:** `get_ticker_quote`, `get_ticker_history`, `list_configured_tickers`
 

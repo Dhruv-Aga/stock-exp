@@ -21,6 +21,8 @@ from src import settings
 from src.agent.chat import list_available_tools, run_agent_chat
 from src.approvals.executor import approve_and_execute
 from src.approvals.store import list_proposals, pending_count, reject_proposal
+from src.db import get_chat_session, list_chat_sessions, save_chat_session
+from src.paper_report import build_paper_analysis
 
 settings.load_settings()
 
@@ -48,6 +50,12 @@ class RejectRequest(BaseModel):
     note: str = ""
 
 
+class ChatSessionPayload(BaseModel):
+    title: str = "New chat"
+    messages: list[ChatMessage] = Field(default_factory=list)
+    metadata: dict = Field(default_factory=dict)
+
+
 def _frontend_running() -> bool:
     port = os.environ.get("FRONTEND_PORT", "8080")
     try:
@@ -58,13 +66,16 @@ def _frontend_running() -> bool:
 
 
 def _load_paper_analysis() -> dict:
-    path = ROOT / "paper" / "analysis.json"
-    if not path.exists():
-        return {}
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return {}
+        return build_paper_analysis()
+    except Exception:
+        path = ROOT / "paper" / "analysis.json"
+        if not path.exists():
+            return {}
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return {}
 
 
 @app.get("/api/agent/health")
@@ -79,6 +90,11 @@ def health():
         "pending_proposals": pending_count(),
         "tools_count": len(list_available_tools()),
     }
+
+
+@app.get("/api/paper/analysis")
+def paper_analysis():
+    return _load_paper_analysis()
 
 
 @app.get("/api/trading/summary")
@@ -141,6 +157,40 @@ def tools():
     return {"tools": list_available_tools()}
 
 
+@app.get("/api/agent/sessions")
+def list_sessions():
+    return {"sessions": list_chat_sessions(limit=50)}
+
+
+@app.post("/api/agent/sessions")
+def create_session(payload: ChatSessionPayload | None = None):
+    cleaned = payload or ChatSessionPayload()
+    session = save_chat_session(
+        title=cleaned.title,
+        messages=[m.model_dump() for m in cleaned.messages],
+        metadata=cleaned.metadata,
+    )
+    return session
+
+
+@app.get("/api/agent/sessions/{session_id}")
+def get_session(session_id: str):
+    session = get_chat_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="session not found")
+    return session
+
+
+@app.put("/api/agent/sessions/{session_id}")
+def upsert_session(session_id: str, payload: ChatSessionPayload):
+    return save_chat_session(
+        session_id=session_id,
+        title=payload.title,
+        messages=[m.model_dump() for m in payload.messages],
+        metadata=payload.metadata,
+    )
+
+
 @app.post("/api/agent/chat")
 def chat(request: ChatRequest):
     messages = [m.model_dump() for m in request.messages]
@@ -181,5 +231,6 @@ if __name__ == "__main__":
     import os
     import uvicorn
 
+    host = os.environ.get("HOST_BIND", "0.0.0.0")
     port = int(os.environ.get("AGENT_API_PORT", "8000"))
-    uvicorn.run("run_agent_api:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("run_agent_api:app", host=host, port=port, reload=False)

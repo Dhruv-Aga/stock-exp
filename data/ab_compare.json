@@ -1,0 +1,171 @@
+{
+  "generated_at": "2026-09-02T10:32:36",
+  "refresh": false,
+  "data_source": "yfinance",
+  "plan": {
+    "exit_intents": [],
+    "entry_intents": [],
+    "skip_messages": [],
+    "risk_decision": {
+      "action": "reduce_risk",
+      "risk_multiplier": 0.75,
+      "block_new_entries": false,
+      "reason": "Recent consecutive losses and a modest drawdown warrant a more cautious stance for any new entries.",
+      "confidence": "medium",
+      "source": "rules+llm",
+      "rule_baseline": {
+        "action": "neutral",
+        "risk_multiplier": 1.0,
+        "block_new_entries": false,
+        "reason": "No pending entry signals; neutral posture.",
+        "confidence": "high",
+        "source": "rules",
+        "rule_baseline": {
+          "action": "neutral",
+          "risk_multiplier": 1.0,
+          "block_new_entries": false,
+          "reason": "No pending entry signals; neutral posture.",
+          "confidence": "high",
+          "source": "rules",
+          "rule_baseline": {},
+          "llm_raw": null
+        },
+        "llm_raw": null
+      },
+      "llm_raw": {
+        "action": "reduce_risk",
+        "risk_multiplier": 0.75,
+        "block_new_entries": false,
+        "reason": "Recent consecutive losses and a modest drawdown warrant a more cautious stance for any new entries.",
+        "confidence": "medium"
+      }
+    },
+    "prices": {
+      "VAML.NS": 434.1000061035156,
+      "VEDL.NS": 271.70001220703125,
+      "VEDPOWER.NS": 34.790000915527344,
+      "VISL.NS": 35.5,
+      "BHEL.NS": 422.2000122070313
+    },
+    "data_as_of": {
+      "VAML.NS": "2026-09-02 09:15:00+05:30",
+      "VEDL.NS": "2026-09-02 09:15:00+05:30",
+      "VEDPOWER.NS": "2026-09-02 09:15:00+05:30",
+      "VISL.NS": "2026-09-02 09:15:00+05:30",
+      "BHEL.NS": "2026-09-02 09:15:00+05:30"
+    }
+  },
+  "paper_state": {
+    "equity_before": 101318.76507228239,
+    "cash": 74283.1472751348,
+    "open_positions": 3
+  },
+  "live_state": {
+    "equity_before": 101158.61290006389,
+    "cash": 75000.0,
+    "open_positions": 1
+  },
+  "paper_projection": {
+    "actions": [],
+    "equity": 101318.76507228239,
+    "cash": 74283.1472751348,
+    "open_positions": 3,
+    "positions": {
+      "BHEL.NS": {
+        "side": 1,
+        "quantity": 61.95786864931846,
+        "entry_price": 403.5,
+        "stop_price": 395.37118836869524
+      },
+      "VAML.NS": {
+        "side": -1,
+        "quantity": 33.078213042533804,
+        "entry_price": 464.95001220703125,
+        "stop_price": 466.72308474088334
+      },
+      "VISL.NS": {
+        "side": 1,
+        "quantity": 429.1903487532677,
+        "entry_price": 35.5,
+        "stop_price": 34.45089744982183
+      }
+    }
+  },
+  "live_projection": {
+    "actions": [],
+    "equity": 101158.61290006389,
+    "cash": 75000.0,
+    "open_positions": 1,
+    "positions": {
+      "BHEL.NS": {
+        "side": 1,
+        "quantity": 61.95786864931846,
+        "entry_price": 403.5,
+        "stop_price": 395.37118836869524
+      }
+    }
+  },
+  "same_book_comparison": {
+    "paper": {
+      "actions": [],
+      "equity": 101318.76507228239,
+      "cash": 74283.1472751348,
+      "open_positions": 3,
+      "positions": {
+        "BHEL.NS": {
+          "side": 1,
+          "quantity": 61.95786864931846,
+          "entry_price": 403.5,
+          "stop_price": 395.37118836869524
+        },
+        "VAML.NS": {
+          "side": -1,
+          "quantity": 33.078213042533804,
+          "entry_price": 464.95001220703125,
+          "stop_price": 466.72308474088334
+        },
+        "VISL.NS": {
+          "side": 1,
+          "quantity": 429.1903487532677,
+          "entry_price": 35.5,
+          "stop_price": 34.45089744982183
+        }
+      }
+    },
+    "live_shadow": {
+      "actions": [],
+      "equity": 101318.76507228239,
+      "cash": 74283.1472751348,
+      "open_positions": 3,
+      "positions": {
+        "BHEL.NS": {
+          "side": 1,
+          "quantity": 61.95786864931846,
+          "entry_price": 403.5,
+          "stop_price": 395.37118836869524
+        },
+        "VAML.NS": {
+          "side": -1,
+          "quantity": 33.078213042533804,
+          "entry_price": 464.95001220703125,
+          "stop_price": 466.72308474088334
+        },
+        "VISL.NS": {
+          "side": 1,
+          "quantity": 429.1903487532677,
+          "entry_price": 35.5,
+          "stop_price": 34.45089744982183
+        }
+      }
+    },
+    "divergences": [],
+    "parity_score": 1.0
+  },
+  "summary": {
+    "exit_intents": 0,
+    "entry_intents": 0,
+    "skips": 0,
+    "parity_score": 1.0,
+    "equity_delta_same_book": 0.0
+  }
+}

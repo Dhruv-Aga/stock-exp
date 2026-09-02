@@ -10,6 +10,14 @@ cp .env.example .env          # edit: add GROQ_API_KEY, optional KITE_*
 ./scripts/dev.sh start        # agent API + frontend
 ```
 
+Windows PowerShell users can run the same launcher without bash:
+
+```powershell
+Copy-Item .env.example .env
+./scripts/dev.ps1 setup
+./scripts/dev.ps1 start
+```
+
 Open:
 
 | URL | What |

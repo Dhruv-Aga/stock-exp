@@ -9,6 +9,7 @@ from config import MARKETS
 from src import settings
 from src.backtest import STRATEGY_MAP
 from src.broker.symbol_map import can_trade_side
+from src.custom_strategies import iter_custom_session_bars
 from src.data_loader import load_market_data
 from src.risk import (
     Portfolio,
@@ -130,6 +131,7 @@ def build_session_plan(
         prefer_kite=prefer_kite,
         kite_client=kite_client,
     )
+    bars.extend(iter_custom_session_bars(refresh=refresh))
     plan.market_bars = bars
 
     for bar in bars:

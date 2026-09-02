@@ -1,6 +1,7 @@
 import { url } from "../src/shell/paths.js";
 
 const ANALYSIS_URL = url("/paper/analysis.json");
+const ANALYSIS_API_URL = url("/api/paper/analysis");
 
 const elements = {
   emptyState: document.querySelector("#emptyState"),
@@ -13,6 +14,9 @@ const elements = {
   noPositions: document.querySelector("#noPositions"),
   tradesBody: document.querySelector("#tradesBody"),
   noTrades: document.querySelector("#noTrades"),
+  allTradesBody: document.querySelector("#allTradesBody"),
+  noAllTrades: document.querySelector("#noAllTrades"),
+  decisionList: document.querySelector("#decisionList"),
   equityChart: document.querySelector("#equityChart"),
   refreshPaperBtn: document.querySelector("#refreshPaperBtn"),
 };
@@ -148,6 +152,59 @@ function renderTrades(trades) {
     .join("");
 }
 
+function renderDecisions(analysis) {
+  const items = [];
+  const risk = analysis.risk_decision || {};
+  if (risk.action || risk.reason) {
+    items.push({
+      title: `Risk decision: ${risk.action || "neutral"}`,
+      detail: risk.reason || "No rationale recorded.",
+      tone: risk.action === "block" ? "warning" : risk.action === "reduce" ? "info" : "good",
+    });
+  }
+  (analysis.session_actions || []).forEach((action) => {
+    items.push({ title: "Session action", detail: action, tone: "info" });
+  });
+  if (!items.length) {
+    elements.decisionList.innerHTML = '<p class="tracker-muted">No daily decisions logged yet.</p>';
+    return;
+  }
+
+  elements.decisionList.innerHTML = items
+    .map(
+      (item) => `
+        <div class="decision-item ${item.tone}">
+          <div class="decision-title">${escapeHtml(item.title)}</div>
+          <div class="decision-detail">${escapeHtml(item.detail)}</div>
+        </div>`
+    )
+    .join("");
+}
+
+function renderAllTrades(trades) {
+  if (!trades.length) {
+    elements.allTradesBody.innerHTML = "";
+    show(elements.noAllTrades);
+    return;
+  }
+
+  hide(elements.noAllTrades);
+  elements.allTradesBody.innerHTML = trades
+    .map(
+      (t) => `
+      <tr>
+        <td>${formatDate(t.exit_time || t.entry_time || t.date)}</td>
+        <td>${escapeHtml(t.symbol || "")}</td>
+        <td>${escapeHtml(t.side || "")}</td>
+        <td>${money(t.entry_price)}</td>
+        <td>${money(t.exit_price)}</td>
+        <td class="${pnlClass(t.pnl)}">${money(t.pnl)}</td>
+        <td>${escapeHtml(t.reason || t.entry_reason || "—")}</td>
+      </tr>`
+    )
+    .join("");
+}
+
 function renderEquityChart(dailyEquity) {
   const rows = (dailyEquity || []).filter((r) => r.equity != null).slice(-90);
   const labels = rows.map((r) => String(r.date || ""));
@@ -213,9 +270,14 @@ function isEmptyAnalysis(analysis) {
 
 async function loadPortfolio() {
   try {
-    const response = await fetch(ANALYSIS_URL, { cache: "no-store" });
+    let response = await fetch(ANALYSIS_API_URL, { cache: "no-store" });
+    let source = ANALYSIS_API_URL;
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} loading ${ANALYSIS_URL}`);
+      response = await fetch(ANALYSIS_URL, { cache: "no-store" });
+      source = ANALYSIS_URL;
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} loading ${source}`);
+      }
     }
 
     const analysis = await response.json();
@@ -240,6 +302,8 @@ async function loadPortfolio() {
     renderKpis(analysis);
     renderPositions(analysis.open_positions || []);
     renderTrades(analysis.recent_trades || []);
+    renderDecisions(analysis);
+    renderAllTrades(analysis.recent_trades || []);
     renderEquityChart(analysis.daily_equity || []);
   } catch (error) {
     hide(elements.trackerMain);
@@ -250,36 +314,8 @@ async function loadPortfolio() {
   }
 }
 
-function setTab(tabId) {
-  document.querySelectorAll(".portfolio-tab").forEach((btn) => {
-    const active = btn.dataset.tab === tabId;
-    btn.classList.toggle("active", active);
-    btn.setAttribute("aria-selected", active ? "true" : "false");
-  });
-  document.querySelectorAll(".portfolio-panel").forEach((panel) => {
-    panel.classList.toggle("hidden", panel.id !== `panel-${tabId}`);
-  });
-}
-
-document.querySelectorAll(".portfolio-tab").forEach((btn) => {
-  btn.addEventListener("click", () => setTab(btn.dataset.tab));
-});
-
-const params = new URLSearchParams(window.location.search);
-if (params.get("tab") === "details" || window.location.hash === "#details") {
-  setTab("details");
-}
-
-window.addEventListener("hashchange", () => {
-  if (window.location.hash === "#details") {
-    setTab("details");
-  }
-});
-
 elements.refreshPaperBtn?.addEventListener("click", () => {
   loadPortfolio();
-  const frame = document.querySelector("#paperFrame");
-  if (frame) frame.src = url("/paper/?t=" + Date.now());
 });
 
 loadPortfolio();

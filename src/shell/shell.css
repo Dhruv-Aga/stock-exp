@@ -1,8 +1,12 @@
 .shell-status-strip {
-  display: flex;
+  display: none;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 16px;
+}
+
+.shell-status-strip.is-open {
+  display: flex;
 }
 
 .status-pill {
@@ -19,19 +23,19 @@
 }
 
 .status-pill.ok {
-  border-color: rgba(34, 197, 94, 0.35);
-  color: #86efac;
+  border-color: rgba(129, 199, 132, 0.35);
+  color: #d1fae5;
 }
 
 .status-pill.warn {
-  border-color: rgba(251, 146, 60, 0.35);
-  color: #fdba74;
+  border-color: rgba(138, 180, 248, 0.35);
+  color: #dbeafe;
 }
 
 .status-pill.alert {
-  border-color: rgba(248, 113, 113, 0.45);
-  color: #fca5a5;
-  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(229, 115, 115, 0.45);
+  color: #fee2e2;
+  background: rgba(229, 115, 115, 0.08);
 }
 
 .status-pill.neutral {
@@ -53,18 +57,20 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
-  background: #ef4444;
+  background: var(--error);
   color: #fff;
 }
 
 .site-nav a.nav-secondary {
   margin-left: auto;
-  opacity: 0.85;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  background: rgba(148, 163, 184, 0.08);
+  opacity: 1;
 }
 
 .site-nav a.nav-secondary::before {
-  content: "··· ";
-  opacity: 0.5;
+  content: "⋯ ";
+  opacity: 0.7;
 }
 
 .offline-banner {

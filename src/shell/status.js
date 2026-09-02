@@ -17,7 +17,7 @@ function money(value) {
  * @param {HTMLElement} container
  */
 export async function mountStatusStrip(container) {
-  container.className = "shell-status-strip";
+  container.className = "shell-status-strip is-collapsed";
   container.innerHTML = `<span class="status-pill loading">Checking services…</span>`;
 
   try {
@@ -61,24 +61,19 @@ function renderStatus(container, data, agentOnline) {
     )
   );
 
-  if (agent.groq_configured != null) {
-    parts.push(pill("Groq", agent.groq_configured, agent.groq_configured ? "" : "Add GROQ_API_KEY to .env"));
+  if (agent.groq_configured === false) {
+    parts.push(pill("Groq missing", false, "Add GROQ_API_KEY to .env"));
   }
-  if (agent.kite_configured != null) {
-    parts.push(pill("Kite", agent.kite_configured, agent.kite_configured ? "" : "Add KITE_* to .env"));
+  if (agent.kite_configured === false) {
+    parts.push(pill("Kite missing", false, "Add KITE_* to .env"));
   }
 
   if (agent.auto_approve_trades) {
     parts.push(
       pill("Auto-approve ON", false, "AUTO_APPROVE_TRADES=true — live proposals execute immediately")
     );
-  } else if (agent.require_trade_approval) {
-    parts.push(pill("Approval required", true));
-  }
-
-  const pending = Number(agent.pending_proposals || 0);
-  if (pending > 0) {
-    parts.push(`<a class="status-pill alert" href="${url("/approvals/")}">${pending} pending approval${pending === 1 ? "" : "s"}</a>`);
+  } else if (agent.require_trade_approval || Number(agent.pending_proposals || 0) > 0) {
+    parts.push(pill("Approval required", true, "Human review required before execution"));
   }
 
   if (portfolio.equity != null) {

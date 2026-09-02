@@ -19,11 +19,52 @@
 .portfolio-tab.active {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(251, 146, 60, 0.08);
+  background: rgba(138, 180, 248, 0.08);
 }
 
 .portfolio-panel.hidden {
   display: none;
+}
+
+.portfolio-section {
+  margin-top: 18px;
+}
+
+.decision-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.decision-item {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  background: rgba(148, 163, 184, 0.06);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.decision-item.good {
+  border-left-color: var(--success-strong);
+}
+
+.decision-item.warning {
+  border-left-color: var(--primary-strong);
+}
+
+.decision-item.info {
+  border-left-color: var(--secondary-strong);
+}
+
+.decision-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.decision-detail {
+  color: var(--muted);
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 .portfolio-details-frame {
@@ -32,4 +73,30 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   background: #f6f8fa;
+}
+
+@media (max-width: 700px) {
+  .portfolio-tabs {
+    flex-wrap: wrap;
+  }
+
+  .portfolio-tab {
+    flex: 1 1 calc(50% - 8px);
+    text-align: center;
+  }
+
+  .decision-item {
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .portfolio-tabs {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-tab {
+    flex-basis: auto;
+  }
 }

@@ -1,1 +1,47 @@
-[]
+[
+  {
+    "id": 1,
+    "symbol": "VEDL.NS",
+    "side": "long",
+    "quantity": 50.0,
+    "entry_time": "2026-06-25T09:30:00",
+    "entry_price": 450.0,
+    "exit_time": "2026-06-25T11:45:00",
+    "exit_price": 465.0,
+    "pnl": 750.0,
+    "return_pct": 3.3333333333333335,
+    "reason": "signal_exit",
+    "run_type": "paper",
+    "dry_run": 1
+  },
+  {
+    "id": 4,
+    "symbol": "VAML.NS",
+    "side": "short",
+    "quantity": 38.59913508365411,
+    "entry_time": "2026-08-26 15:15:00+05:30",
+    "entry_price": 462.75,
+    "exit_time": "2026-08-27 09:15:00+05:30",
+    "exit_price": 464.49023115315316,
+    "pnl": -67.17141735734202,
+    "return_pct": -0.3760629180233735,
+    "reason": "Entry: Short: price above upper Bollinger Band and RSI > 70 (mean reversion sell) | Exit: Stop loss hit (1 ATR hard stop)",
+    "run_type": "paper",
+    "dry_run": 1
+  },
+  {
+    "id": 5,
+    "symbol": "VISL.NS",
+    "side": "long",
+    "quantity": 678.7944272899887,
+    "entry_time": "2026-08-20 09:15:00+05:30",
+    "entry_price": 36.83000183105469,
+    "exit_time": "2026-09-01 13:15:00+05:30",
+    "exit_price": 35.66154868413324,
+    "pnl": -793.139484679731,
+    "return_pct": -3.172557938718924,
+    "reason": "Entry: Long: fast EMA(20) crossed above slow EMA(50) (trend following) | Exit: Stop loss hit (1 ATR hard stop)",
+    "run_type": "paper",
+    "dry_run": 1
+  }
+]

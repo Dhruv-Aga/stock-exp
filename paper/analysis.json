@@ -1,67 +1,174 @@
 {
-  "generated_at": "2026-09-01T15:00:39.575236",
-  "state_updated": "2026-09-01T15:00:39.573572",
-  "session_actions": [
-    "ENTER LONG Vedanta Iron & Steel @ Rs35.50 qty=704.23 stop=Rs34.45 - Long: fast EMA(20) crossed above slow EMA(50) (trend following)",
-    "  \u21b3 Shadow live proposal queued for review (id=690c789d\u2026)",
-    "ENTER LONG BHEL @ Rs426.55 qty=58.61 stop=Rs418.49 - Long: fast EMA(20) crossed above slow EMA(50) (trend following)",
-    "  \u21b3 Shadow live proposal queued for review (id=118e3436\u2026)"
-  ],
+  "generated_at": "2026-09-02T10:53:06.148122",
+  "state_updated": "2026-09-02T10:53:06.058045",
+  "session_actions": [],
   "data_as_of": {
-    "VAML.NS": "2026-09-01 15:15:00+05:30",
-    "VEDL.NS": "2026-09-01 15:15:00+05:30",
-    "VEDPOWER.NS": "2026-09-01 15:15:00+05:30",
-    "VISL.NS": "2026-09-01 13:15:00+05:30",
-    "BHEL.NS": "2026-09-01 13:15:00+05:30"
+    "VAML.NS": "2026-09-02 10:45:00+05:30",
+    "VEDL.NS": "2026-09-02 10:15:00+05:30",
+    "VEDPOWER.NS": "2026-09-02 10:15:00+05:30",
+    "VISL.NS": "2026-09-02 09:15:00+05:30",
+    "BHEL.NS": "2026-09-02 09:15:00+05:30"
   },
-  "equity": 100000.0,
-  "cash": 50000.0,
-  "unrealized_pnl": 0.0,
-  "realized_pnl_all": 0,
-  "total_pnl": 0.0,
-  "total_return_pct": 0.0,
+  "equity": 101603.99755236298,
+  "cash": 74283.1472751348,
+  "unrealized_pnl": 2464.308454400053,
+  "realized_pnl_all": -110.3109020370731,
+  "total_pnl": 1603.9975523629837,
+  "total_return_pct": 1.603997552362979,
   "today_pnl": 0.0,
-  "week_pnl": 0.0,
-  "month_pnl": 0.0,
+  "week_pnl": -793.139484679731,
+  "month_pnl": -793.139484679731,
   "week_start": "2026-08-31",
   "month_start": "2026-09-01",
   "today_trades": [],
-  "recent_trades": [],
+  "recent_trades": [
+    {
+      "id": 5,
+      "symbol": "VISL.NS",
+      "side": "long",
+      "quantity": 678.7944272899887,
+      "entry_time": "2026-08-20 09:15:00+05:30",
+      "entry_price": 36.83000183105469,
+      "exit_time": "2026-09-01 13:15:00+05:30",
+      "exit_price": 35.66154868413324,
+      "pnl": -793.139484679731,
+      "return_pct": -3.172557938718924,
+      "reason": "Entry: Long: fast EMA(20) crossed above slow EMA(50) (trend following) | Exit: Stop loss hit (1 ATR hard stop)",
+      "run_type": "paper",
+      "dry_run": 1
+    },
+    {
+      "id": 4,
+      "symbol": "VAML.NS",
+      "side": "short",
+      "quantity": 38.59913508365411,
+      "entry_time": "2026-08-26 15:15:00+05:30",
+      "entry_price": 462.75,
+      "exit_time": "2026-08-27 09:15:00+05:30",
+      "exit_price": 464.49023115315316,
+      "pnl": -67.17141735734202,
+      "return_pct": -0.3760629180233735,
+      "reason": "Entry: Short: price above upper Bollinger Band and RSI > 70 (mean reversion sell) | Exit: Stop loss hit (1 ATR hard stop)",
+      "run_type": "paper",
+      "dry_run": 1
+    },
+    {
+      "id": 1,
+      "symbol": "VEDL.NS",
+      "side": "long",
+      "quantity": 50.0,
+      "entry_time": "2026-06-25T09:30:00",
+      "entry_price": 450.0,
+      "exit_time": "2026-06-25T11:45:00",
+      "exit_price": 465.0,
+      "pnl": 750.0,
+      "return_pct": 3.3333333333333335,
+      "reason": "signal_exit",
+      "run_type": "paper",
+      "dry_run": 1
+    }
+  ],
   "open_positions": [
+    {
+      "symbol": "BHEL.NS",
+      "name": "BHEL",
+      "side": "LONG",
+      "entry_price": 403.5,
+      "mark_price": 425.29998779296875,
+      "quantity": 61.95786864931846,
+      "unrealized_pnl": 1350.6807802335038,
+      "entry_reason": "",
+      "entry_time": "2026-06-25 13:15:00+05:30",
+      "stop_price": 395.37118836869524
+    },
+    {
+      "symbol": "VAML.NS",
+      "name": "Vedanta Aluminium",
+      "side": "SHORT",
+      "entry_price": 464.95001220703125,
+      "mark_price": 433.1000061035156,
+      "quantity": 33.078213042533804,
+      "unrealized_pnl": 1053.541287298092,
+      "entry_reason": "Short: price above upper Bollinger Band and RSI > 70 (mean reversion sell)",
+      "entry_time": "2026-08-27 09:15:00+05:30",
+      "stop_price": 466.72308474088334
+    },
     {
       "symbol": "VISL.NS",
       "name": "Vedanta Iron & Steel",
       "side": "LONG",
       "entry_price": 35.5,
-      "mark_price": 35.5,
-      "quantity": 704.2253521126761,
-      "unrealized_pnl": 0.0,
+      "mark_price": 35.63999938964844,
+      "quantity": 429.1903487532677,
+      "unrealized_pnl": 60.08638686845751,
       "entry_reason": "Long: fast EMA(20) crossed above slow EMA(50) (trend following)",
       "entry_time": "2026-09-01 13:15:00+05:30",
       "stop_price": 34.45089744982183
-    },
-    {
-      "symbol": "BHEL.NS",
-      "name": "BHEL",
-      "side": "LONG",
-      "entry_price": 426.54998779296875,
-      "mark_price": 426.54998779296875,
-      "quantity": 58.609777787953085,
-      "unrealized_pnl": 0.0,
-      "entry_reason": "Long: fast EMA(20) crossed above slow EMA(50) (trend following)",
-      "entry_time": "2026-09-01 13:15:00+05:30",
-      "stop_price": 418.48746170035406
     }
   ],
   "daily_equity": [
     {
-      "date": "2026-09-01",
+      "date": "2026-08-20",
       "realized_pnl": 0.0,
-      "unrealized_pnl": 0.0,
-      "equity": 100000.0
+      "unrealized_pnl": 885.4035360551289,
+      "equity": 100885.4
+    },
+    {
+      "date": "2026-08-23",
+      "realized_pnl": 0.0,
+      "unrealized_pnl": 636.1151549272049,
+      "equity": 100636.12
+    },
+    {
+      "date": "2026-08-26",
+      "realized_pnl": 0.0,
+      "unrealized_pnl": 2067.1414854911027,
+      "equity": 102067.14
+    },
+    {
+      "date": "2026-08-27",
+      "realized_pnl": -67.17141735734202,
+      "unrealized_pnl": 3676.22052371296,
+      "equity": 103609.05
+    },
+    {
+      "date": "2026-08-28",
+      "realized_pnl": 0.0,
+      "unrealized_pnl": 3195.888840958801,
+      "equity": 103128.72
+    },
+    {
+      "date": "2026-08-29",
+      "realized_pnl": 0.0,
+      "unrealized_pnl": 3195.888840958801,
+      "equity": 103128.72
+    },
+    {
+      "date": "2026-08-30",
+      "realized_pnl": 0.0,
+      "unrealized_pnl": 3195.888840958801,
+      "equity": 103128.72
+    },
+    {
+      "date": "2026-08-31",
+      "realized_pnl": 0.0,
+      "unrealized_pnl": 3461.927308367929,
+      "equity": 103394.76
+    },
+    {
+      "date": "2026-09-01",
+      "realized_pnl": -793.139484679731,
+      "unrealized_pnl": 2435.3601069770866,
+      "equity": 101575.05
+    },
+    {
+      "date": "2026-09-02",
+      "realized_pnl": 0.0,
+      "unrealized_pnl": 2464.308454400053,
+      "equity": 101604.0
     }
   ],
-  "total_closed_trades": 0,
+  "total_closed_trades": 3,
   "markets": [
     "Vedanta Aluminium",
     "Vedanta",
@@ -73,15 +180,15 @@
     "action": "neutral",
     "risk_multiplier": 1.0,
     "block_new_entries": false,
-    "reason": "Risk metrics within normal bounds. (LLM disabled: GROQ_API_KEY missing)",
-    "confidence": "medium",
+    "reason": "No pending entry signals; neutral posture. (LLM disabled: GROQ_API_KEY missing)",
+    "confidence": "high",
     "source": "rules",
     "rule_baseline": {
       "action": "neutral",
       "risk_multiplier": 1.0,
       "block_new_entries": false,
-      "reason": "Risk metrics within normal bounds.",
-      "confidence": "medium",
+      "reason": "No pending entry signals; neutral posture.",
+      "confidence": "high",
       "source": "rules",
       "rule_baseline": {},
       "llm_raw": null
@@ -95,14 +202,14 @@
       "strategy": "mean_reversion",
       "interval": "15m",
       "group": "vedanta",
-      "bar_time": "2026-09-01 15:15:00+05:30",
-      "price": 434.5,
-      "atr": 1.703766357582063,
+      "bar_time": "2026-09-02 10:45:00+05:30",
+      "price": 433.1000061035156,
+      "atr": 1.8088826493279406,
       "signal": 0,
       "signal_label": "flat",
       "entry_reason_text": "No entry signal",
-      "has_position": false,
-      "position_side": null
+      "has_position": true,
+      "position_side": "short"
     },
     {
       "symbol": "VEDL.NS",
@@ -110,9 +217,9 @@
       "strategy": "momentum_breakout",
       "interval": "1h",
       "group": "vedanta",
-      "bar_time": "2026-09-01 15:15:00+05:30",
-      "price": 274.0,
-      "atr": 2.267280972171243,
+      "bar_time": "2026-09-02 10:15:00+05:30",
+      "price": 271.1499938964844,
+      "atr": 2.4791861443721435,
       "signal": 0,
       "signal_label": "flat",
       "entry_reason_text": "No entry signal",
@@ -125,9 +232,9 @@
       "strategy": "momentum_breakout",
       "interval": "1h",
       "group": "vedanta",
-      "bar_time": "2026-09-01 15:15:00+05:30",
-      "price": 34.95000076293945,
-      "atr": 0.3257214501665557,
+      "bar_time": "2026-09-02 10:15:00+05:30",
+      "price": 34.58000183105469,
+      "atr": 0.3340149923769505,
       "signal": 0,
       "signal_label": "flat",
       "entry_reason_text": "No entry signal",
@@ -140,14 +247,14 @@
       "strategy": "trend_following",
       "interval": "4h",
       "group": "vedanta",
-      "bar_time": "2026-09-01 13:15:00+05:30",
-      "price": 35.5,
-      "atr": 1.0491025501781694,
+      "bar_time": "2026-09-02 09:15:00+05:30",
+      "price": 35.63999938964844,
+      "atr": 1.0227381041065704,
       "signal": 1,
       "signal_label": "long",
       "entry_reason_text": "Long: fast EMA(20) crossed above slow EMA(50) (trend following)",
-      "has_position": false,
-      "position_side": null
+      "has_position": true,
+      "position_side": "long"
     },
     {
       "symbol": "BHEL.NS",
@@ -155,14 +262,14 @@
       "strategy": "trend_following",
       "interval": "4h",
       "group": "industrial",
-      "bar_time": "2026-09-01 13:15:00+05:30",
-      "price": 426.54998779296875,
-      "atr": 8.062526092614684,
+      "bar_time": "2026-09-02 09:15:00+05:30",
+      "price": 425.29998779296875,
+      "atr": 8.140202364319661,
       "signal": 1,
       "signal_label": "long",
       "entry_reason_text": "Long: fast EMA(20) crossed above slow EMA(50) (trend following)",
-      "has_position": false,
-      "position_side": null
+      "has_position": true,
+      "position_side": "long"
     }
   ]
 }

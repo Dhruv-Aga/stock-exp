@@ -1,9 +1,8 @@
 ﻿name: Daily paper trading report
 
 on:
-  schedule:
-    # 16:00 IST -> 10:30 UTC, weekdays only
-    - cron: '30 10 * * 1-5'
+  # Scheduled runs are intentionally disabled. Keep report generation local-only via
+  # a cron job or `./scripts/dev.sh paper` rather than GitHub Actions.
   workflow_dispatch: {}
 
 # Ensure the workflow has permission to push and manage Pages. If your org restricts

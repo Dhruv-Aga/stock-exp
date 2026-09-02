@@ -39,20 +39,11 @@
         </div>
       </header>
 
-      <div class="portfolio-tabs" role="tablist" aria-label="Portfolio views">
-        <button class="portfolio-tab active" type="button" data-tab="overview" role="tab" aria-selected="true">
-          Overview
-        </button>
-        <button class="portfolio-tab" type="button" data-tab="details" role="tab" aria-selected="false">
-          Full dashboard
-        </button>
-      </div>
-
       <div class="portfolio-panel" id="panel-overview" role="tabpanel">
         <div class="tracker-empty hidden" id="emptyState">
           <h2>No portfolio data yet</h2>
           <p>
-            Run <code>./scripts/dev.sh paper</code> locally, or wait for the daily CI workflow to publish
+            Run <code>./scripts/dev.sh paper</code> (or <code>./scripts/dev.ps1 paper</code>) locally to refresh
             <code>paper/analysis.json</code>.
           </p>
         </div>
@@ -119,18 +110,38 @@
         </main>
       </div>
 
-      <div class="portfolio-panel hidden" id="panel-details" role="tabpanel">
-        <iframe
-          class="portfolio-details-frame"
-          id="paperFrame"
-          title="Paper trading dashboard"
-          src="/paper/"
-          loading="lazy"
-        ></iframe>
-      </div>
+      <section class="card portfolio-section">
+        <div class="section-title">
+          <h2>Daily decisions</h2>
+        </div>
+        <div id="decisionList" class="decision-list"></div>
+      </section>
+
+      <section class="card portfolio-section">
+        <div class="section-title">
+          <h2>All paper trades</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Symbol</th>
+                <th>Side</th>
+                <th>Entry</th>
+                <th>Exit</th>
+                <th>P&amp;L</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody id="allTradesBody"></tbody>
+          </table>
+        </div>
+        <p class="tracker-muted hidden" id="noAllTrades">No paper trades yet</p>
+      </section>
 
       <footer class="footer">
-        Bharat Scout • Data from <code>paper/analysis.json</code> • Refresh with <code>./scripts/dev.sh paper</code>
+        Bharat Scout • Data from <code>paper/analysis.json</code> • Refresh locally with <code>./scripts/dev.sh paper</code> or <code>./scripts/dev.ps1 paper</code>
       </footer>
     </div>
 

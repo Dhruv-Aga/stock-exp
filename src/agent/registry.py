@@ -20,6 +20,9 @@ TOOL_HANDLERS: dict[str, ToolHandler] = {
     "run_momentum_breakout_strategy": strategies.run_momentum_breakout_strategy,
     "run_trend_following_strategy": strategies.run_trend_following_strategy,
     "get_all_strategy_signals": strategies.get_all_strategy_signals,
+    "get_screener_snapshot": strategies.get_screener_snapshot,
+    "create_strategy_from_prompt": strategies.create_strategy_from_prompt,
+    "list_saved_strategies": strategies.list_saved_strategies,
     # Ticker tools
     "get_ticker_quote": tickers.get_ticker_quote,
     "get_ticker_history": tickers.get_ticker_history,
@@ -137,6 +140,51 @@ def tool_schemas() -> list[dict[str, Any]]:
                         "refresh": {"type": "boolean", "default": False},
                     },
                 },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_screener_snapshot",
+                "description": "Read the screener's current watchlist and company fundamentals so the agent can analyze opportunities and design strategies from real market context.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "symbols": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Optional list of symbols to inspect; defaults to the screener watchlist.",
+                        },
+                    },
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "create_strategy_from_prompt",
+                "description": "Create a saved custom strategy from a pasted strategy prompt so it can be used in the next paper trading session.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string", "description": "Friendly name for the strategy"},
+                        "strategy": {"type": "string", "description": "Natural-language strategy prompt describing the logic"},
+                        "symbols": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Optional symbols this strategy should apply to",
+                        },
+                    },
+                    "required": ["strategy"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "list_saved_strategies",
+                "description": "List the custom strategies saved by the agent so you can review, enable, or reuse them.",
+                "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
             },
         },
         {

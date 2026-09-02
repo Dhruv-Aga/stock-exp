@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
+import uuid
 from contextlib import contextmanager
 from datetime import date, datetime
 
@@ -51,6 +53,27 @@ def init_db() -> None:
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS custom_strategies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                description TEXT NOT NULL,
+                symbols TEXT NOT NULL DEFAULT '[]',
+                config TEXT NOT NULL DEFAULT '{}',
+                enabled INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                author TEXT NOT NULL DEFAULT 'agent'
+            );
+
+            CREATE TABLE IF NOT EXISTS chat_sessions (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL DEFAULT 'New chat',
+                messages TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                metadata TEXT NOT NULL DEFAULT '{}'
             );
 
             CREATE TABLE IF NOT EXISTS trades (
@@ -234,6 +257,187 @@ def get_state(key: str, default: str = "") -> str:
             (key,),
         ).fetchone()
     return row["value"] if row else default
+
+
+def save_custom_strategy(
+    *,
+    name: str,
+    description: str,
+    symbols: list[str] | None = None,
+    config: dict | None = None,
+    enabled: bool = True,
+    author: str = "agent",
+) -> dict:
+    """Persist a custom strategy definition for future paper sessions."""
+    init_db()
+    now = datetime.now().isoformat()
+    payload = {
+        "name": name.strip(),
+        "description": description.strip(),
+        "symbols": symbols or [],
+        "config": config or {},
+        "enabled": 1 if enabled else 0,
+        "author": author.strip() or "agent",
+    }
+    with _conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM custom_strategies WHERE name = ?",
+            (payload["name"],),
+        ).fetchone()
+        if row:
+            conn.execute(
+                """
+                UPDATE custom_strategies
+                SET description = ?, symbols = ?, config = ?, enabled = ?, updated_at = ?, author = ?
+                WHERE name = ?
+                """,
+                (
+                    payload["description"],
+                    json.dumps(payload["symbols"]),
+                    json.dumps(payload["config"]),
+                    payload["enabled"],
+                    now,
+                    payload["author"],
+                    payload["name"],
+                ),
+            )
+            strategy_id = row["id"]
+        else:
+            cur = conn.execute(
+                """
+                INSERT INTO custom_strategies (
+                    name, description, symbols, config, enabled, created_at, updated_at, author
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    payload["name"],
+                    payload["description"],
+                    json.dumps(payload["symbols"]),
+                    json.dumps(payload["config"]),
+                    payload["enabled"],
+                    now,
+                    now,
+                    payload["author"],
+                ),
+            )
+            strategy_id = cur.lastrowid
+    return {
+        "id": strategy_id,
+        "name": payload["name"],
+        "description": payload["description"],
+        "symbols": payload["symbols"],
+        "config": payload["config"],
+        "enabled": bool(payload["enabled"]),
+        "author": payload["author"],
+        "updated_at": now,
+    }
+
+
+def list_custom_strategies(*, enabled_only: bool = False, limit: int = 50) -> list[dict]:
+    init_db()
+    query = "SELECT * FROM custom_strategies"
+    params: list = []
+    if enabled_only:
+        query += " WHERE enabled = 1"
+    query += " ORDER BY updated_at DESC LIMIT ?"
+    params.append(limit)
+    with _conn() as conn:
+        rows = conn.execute(query, params).fetchall()
+    result = []
+    for row in rows:
+        result.append(
+            {
+                "id": row["id"],
+                "name": row["name"],
+                "description": row["description"],
+                "symbols": json.loads(row["symbols"] or "[]"),
+                "config": json.loads(row["config"] or "{}"),
+                "enabled": bool(row["enabled"]),
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+                "author": row["author"],
+            }
+        )
+    return result
+
+
+def save_chat_session(*, session_id: str | None = None, title: str = "New chat", messages: list[dict] | None = None, metadata: dict | None = None) -> dict:
+    """Persist an assistant chat session and its message history to SQLite."""
+    init_db()
+    now = datetime.now().isoformat()
+    sid = (session_id or str(uuid.uuid4())).strip() or str(uuid.uuid4())
+    message_payload = messages or []
+    meta = metadata or {}
+    with _conn() as conn:
+        row = conn.execute("SELECT id FROM chat_sessions WHERE id = ?", (sid,)).fetchone()
+        if row:
+            conn.execute(
+                """
+                UPDATE chat_sessions
+                SET title = ?, messages = ?, updated_at = ?, metadata = ?
+                WHERE id = ?
+                """,
+                (title.strip() or "New chat", json.dumps(message_payload), now, json.dumps(meta), sid),
+            )
+        else:
+            conn.execute(
+                """
+                INSERT INTO chat_sessions (id, title, messages, created_at, updated_at, metadata)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (sid, title.strip() or "New chat", json.dumps(message_payload), now, now, json.dumps(meta)),
+            )
+    return {
+        "id": sid,
+        "title": title.strip() or "New chat",
+        "messages": message_payload,
+        "created_at": now,
+        "updated_at": now,
+        "metadata": meta,
+    }
+
+
+def get_chat_session(session_id: str) -> dict | None:
+    init_db()
+    with _conn() as conn:
+        row = conn.execute("SELECT * FROM chat_sessions WHERE id = ?", (session_id,)).fetchone()
+    if not row:
+        return None
+    return {
+        "id": row["id"],
+        "title": row["title"],
+        "messages": json.loads(row["messages"] or "[]"),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "metadata": json.loads(row["metadata"] or "{}"),
+    }
+
+
+def list_chat_sessions(limit: int = 50) -> list[dict]:
+    init_db()
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM chat_sessions ORDER BY updated_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+    return [
+        {
+            "id": row["id"],
+            "title": row["title"],
+            "messages": json.loads(row["messages"] or "[]"),
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "metadata": json.loads(row["metadata"] or "{}"),
+        }
+        for row in rows
+    ]
+
+
+def delete_chat_session(session_id: str) -> bool:
+    init_db()
+    with _conn() as conn:
+        cur = conn.execute("DELETE FROM chat_sessions WHERE id = ?", (session_id,))
+    return cur.rowcount > 0
 
 
 def recent_orders(limit: int = 20) -> list[dict]:

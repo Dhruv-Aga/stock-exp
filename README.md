@@ -2,6 +2,8 @@
 
 Bharat Scout is a responsive NSE watchlist and value screener that can be hosted as a static site on GitHub Pages. It runs in two modes:
 
+Paper trading and portfolio refreshes are intentionally local-only; use a local cron job or `./scripts/dev.sh paper` (or `./scripts/dev.ps1 paper`) instead of a GitHub Actions schedule.
+
 - **Demo mode:** no backend required; useful for UI checks and GitHub Pages previews.
 - **Kite live mode:** the frontend calls a private Node/Express proxy, and the proxy calls Zerodha Kite with credentials stored in backend environment variables.
 
@@ -63,6 +65,14 @@ cp .env.example .env
 ./scripts/dev.sh start
 ```
 
+On Windows PowerShell, use:
+
+```powershell
+Copy-Item .env.example .env
+./scripts/dev.ps1 setup
+./scripts/dev.ps1 start
+```
+
 This starts the **agent API** (`:8000`) and **frontend** (`:8080`) together. One `.env` file configures everything.
 
 | Command | What it does |
@@ -104,7 +114,7 @@ See [`AGENTS.md`](AGENTS.md) for the full tool list.
 1. Push this repository to GitHub.
 2. In GitHub, open **Settings → Pages**.
 3. Set **Source** to **GitHub Actions**.
-4. The **Daily paper trading report** workflow runs on weekdays, updates `paper/analysis.json`, and deploys the full static site.
+4. The paper trading snapshot is refreshed locally with a cron job or `./scripts/dev.sh paper`; the static site can still be deployed from GitHub Pages when needed.
 5. For a one-off manual deploy, run **Deploy static frontend to GitHub Pages**.
 
 **Live URL:** GitHub Pages project sites are served at `https://<user>.github.io/<repo>/` (for this repo: `https://dhruv-aga.github.io/stock-exp/`). Navigation links are base-path aware, so `/portfolio/` resolves correctly under the repo prefix — not at `https://<user>.github.io/portfolio/`.

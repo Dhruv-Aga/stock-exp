@@ -1,7 +1,7 @@
 .approval-banner {
   margin-bottom: 20px;
-  border: 1px solid rgba(251, 146, 60, 0.35);
-  background: rgba(251, 146, 60, 0.1);
+  border: 1px solid rgba(138, 180, 248, 0.35);
+  background: rgba(138, 180, 248, 0.1);
 }
 
 .approval-banner p {
@@ -52,8 +52,8 @@
 }
 
 .btn-approve {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: #111;
+  background: linear-gradient(135deg, var(--success), var(--success-strong));
+  color: #f8fafc;
 }
 
 .btn-reject {
