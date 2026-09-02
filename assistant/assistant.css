@@ -32,14 +32,15 @@
 }
 
 .prompt-chip {
-  border: 1px solid rgba(138, 180, 248, 0.32);
-  background: rgba(138, 180, 248, 0.08);
-  color: var(--text);
+  border: 1px solid rgba(138, 180, 248, 0.42);
+  background: linear-gradient(180deg, rgba(138, 180, 248, 0.12), rgba(30, 58, 95, 0.12));
+  color: #e2e8f0;
   border-radius: 999px;
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .chat-messages {
@@ -169,20 +170,21 @@
   width: 42px;
   height: 42px;
   border: 1px solid var(--border);
-  background: rgba(15, 23, 42, 0.4);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(30, 41, 59, 0.7));
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--text);
-  transition: border-color 0.2s ease, background 0.2s ease;
+  color: #e2e8f0;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
 .session-history-toggle:hover,
 .session-history-toggle[aria-expanded="true"] {
   border-color: rgba(56, 189, 248, 0.8);
   background: rgba(56, 189, 248, 0.12);
+  transform: translateY(-1px);
 }
 
 .session-history-toggle svg {
@@ -198,8 +200,8 @@
   width: min(320px, 76vw);
   max-height: 300px;
   overflow: auto;
-  background: rgba(15, 23, 42, 0.96);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+  border: 1px solid rgba(148, 163, 184, 0.32);
   border-radius: 12px;
   box-shadow: 0 18px 30px rgba(15, 23, 42, 0.45);
   padding: 8px;
@@ -218,10 +220,10 @@
   align-items: flex-start;
   gap: 4px;
   border: 1px solid transparent;
-  background: rgba(148, 163, 184, 0.04);
+  background: rgba(148, 163, 184, 0.06);
   border-radius: 10px;
   padding: 10px 12px;
-  color: inherit;
+  color: #e2e8f0;
   text-align: left;
   cursor: pointer;
 }
@@ -233,18 +235,19 @@
 .session-menu-item.active,
 .session-menu-item:hover {
   border-color: rgba(56, 189, 248, 0.8);
-  background: rgba(56, 189, 248, 0.08);
+  background: rgba(56, 189, 248, 0.1);
 }
 
 .session-menu-title {
   font-weight: 600;
   line-height: 1.3;
+  color: #f8fafc;
 }
 
 .session-menu-preview,
 .session-menu-meta {
   font-size: 11px;
-  color: var(--muted);
+  color: rgba(226, 232, 240, 0.82);
 }
 
 .chat-form textarea {
