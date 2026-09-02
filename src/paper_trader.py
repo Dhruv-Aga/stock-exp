@@ -293,6 +293,18 @@ def run_paper_session(*, refresh: bool = True) -> dict:
             lines.append(f"    Reason: {t['reason']}")
     lines.append("=" * 60)
 
+    # Run portfolio checks and trigger alerts if needed
+    trigger_result = None
+    if portfolio.positions:  # Only check if there are open positions
+        try:
+            from src.triggers import run_portfolio_checks
+            trigger_result = run_portfolio_checks(auto_analyze=True)
+            if trigger_result.get("alerts_created", 0) > 0:
+                lines.insert(-1, f"\n⚠️  ALERTS: {trigger_result['alerts_created']} new portfolio alerts detected and queued for analysis")
+                lines.insert(-1, "   Check /api/triggers/alerts for details\n")
+        except Exception as e:
+            lines.insert(-1, f"\n⚠️  Trigger check failed: {str(e)}\n")
+
     return {
         "summary": "\n".join(lines),
         "actions": actions,
@@ -306,6 +318,7 @@ def run_paper_session(*, refresh: bool = True) -> dict:
         "portfolio": portfolio,
         "risk_decision": plan.risk_decision,
         "governor_context": plan.governor_context,
+        "trigger_result": trigger_result,
     }
 
 

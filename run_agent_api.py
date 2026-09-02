@@ -23,6 +23,8 @@ from src.approvals.executor import approve_and_execute
 from src.approvals.store import list_proposals, pending_count, reject_proposal
 from src.db import get_chat_session, list_chat_sessions, save_chat_session
 from src.paper_report import build_paper_analysis
+from src.triggers import list_alerts, get_alert, run_portfolio_checks, mark_reviewed
+from src.triggers.analyzer import analyze_alert_with_llm, batch_analyze_pending_alerts
 
 settings.load_settings()
 
@@ -54,6 +56,10 @@ class ChatSessionPayload(BaseModel):
     title: str = "New chat"
     messages: list[ChatMessage] = Field(default_factory=list)
     metadata: dict = Field(default_factory=dict)
+
+
+class AlertReviewRequest(BaseModel):
+    action_taken: str = ""
 
 
 def _frontend_running() -> bool:
@@ -223,6 +229,72 @@ def approvals_approve(proposal_id: str):
 def approvals_reject(proposal_id: str, body: RejectRequest):
     try:
         return reject_proposal(proposal_id, note=body.note)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/triggers/check")
+def triggers_check(auto_analyze: bool = True):
+    """Run portfolio checks and queue alerts for LLM analysis."""
+    try:
+        result = run_portfolio_checks(auto_analyze=auto_analyze)
+        return result
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/triggers/alerts")
+def triggers_list(status: str | None = None, symbol: str | None = None, limit: int = 50):
+    """List portfolio alerts with optional filtering."""
+    try:
+        alerts = list_alerts(status=status, symbol=symbol, limit=limit)
+        return {
+            "alerts": alerts,
+            "count": len(alerts),
+            "total_pending": len(list_alerts(status="pending_analysis", limit=999)),
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/triggers/alerts/{alert_id}")
+def triggers_get_alert(alert_id: str):
+    """Get a single alert by ID."""
+    alert = get_alert(alert_id)
+    if not alert:
+        raise HTTPException(status_code=404, detail="alert not found")
+    return alert
+
+
+@app.post("/api/triggers/alerts/{alert_id}/analyze")
+def triggers_analyze_alert(alert_id: str):
+    """Run LLM analysis on a specific alert."""
+    try:
+        result = analyze_alert_with_llm(alert_id)
+        return result
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/triggers/analyze-pending")
+def triggers_analyze_pending(limit: int = 10):
+    """Run LLM analysis on up to N pending alerts."""
+    try:
+        results = batch_analyze_pending_alerts(limit=limit)
+        return {
+            "analyses_run": len(results),
+            "results": results,
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/api/triggers/alerts/{alert_id}/review")
+def triggers_review_alert(alert_id: str, body: AlertReviewRequest):
+    """Mark an alert as reviewed with optional action note."""
+    try:
+        alert = mark_reviewed(alert_id, action_taken=body.action_taken)
+        return alert
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
