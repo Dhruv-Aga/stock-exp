@@ -13,11 +13,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from src import settings
+from src.api_auth import ApiAuthMiddleware, require_api_key
 from src.agent.chat import list_available_tools, run_agent_chat
 from src.approvals.executor import approve_and_execute
 from src.approvals.store import list_proposals, pending_count, reject_proposal
@@ -28,14 +29,30 @@ from src.triggers.analyzer import analyze_alert_with_llm, batch_analyze_pending_
 
 settings.load_settings()
 
-app = FastAPI(title="Bharat Scout Trading Assistant", version="1.1.0")
+app = FastAPI(title="Bharat Scout Trading Assistant", version="1.2.0")
+
+app.add_middleware(ApiAuthMiddleware)
+
+_allowed_origins = os.environ.get(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:8080,http://127.0.0.1:8080",
+).split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https?://.*",
+    allow_origins=[o.strip() for o in _allowed_origins if o.strip()],
+    allow_origin_regex=(
+        r"https?://("
+        r"localhost|127\.0\.0\.1|\[::1\]|"
+        r"[\w-]+(\.local)?|"
+        r"192\.168\.\d{1,3}\.\d{1,3}|"
+        r"10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
+        r"172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}"
+        r")(:\d+)?$"
+    ),
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Bharat-Scout-Key", "Authorization"],
 )
 
 
@@ -85,9 +102,18 @@ def _load_paper_analysis() -> dict:
 
 
 @app.get("/api/agent/health")
-def health():
-    return {
+def health(request: Request):
+    public = {
         "ok": True,
+        "auth_required": settings.api_auth_required(),
+    }
+    if settings.api_auth_required():
+        try:
+            require_api_key(request)
+        except HTTPException:
+            return public
+    return {
+        **public,
         "groq_configured": bool(settings.groq_api_key()),
         "kite_configured": settings.kite_configured(),
         "live_trading": not settings.dry_run_mode(),
@@ -95,6 +121,7 @@ def health():
         "auto_approve_trades": settings.auto_approve_trades(),
         "pending_proposals": pending_count(),
         "tools_count": len(list_available_tools()),
+        "zerodha_auto_login": settings.zerodha_auto_login_configured(),
     }
 
 
@@ -303,6 +330,6 @@ if __name__ == "__main__":
     import os
     import uvicorn
 
-    host = os.environ.get("HOST_BIND", "0.0.0.0")
+    host = os.environ.get("HOST_BIND", "127.0.0.1")
     port = int(os.environ.get("AGENT_API_PORT", "8000"))
     uvicorn.run("run_agent_api:app", host=host, port=port, reload=False)

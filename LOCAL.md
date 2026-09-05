@@ -48,7 +48,9 @@ Everything reads from **`.env` at the repo root**:
 | `LIVE_TRADING` | Enable live mode (still requires approval per trade) |
 | `REQUIRE_TRADE_APPROVAL` | Gate live orders behind `/approvals/` |
 | `AUTO_APPROVE_TRADES` | Execute live proposals immediately (keeps audit trail) |
-| `FRONTEND_PORT` / `AGENT_API_PORT` | `dev.sh` ports |
+| `BHARAT_SCOUT_API_KEY` | Protects agent API on LAN (auto-generated at setup) |
+| `ZERODHA_*` | TOTP auto-login — see `docs/SECURITY.md` |
+| `HOST_BIND` | Default `127.0.0.1`; use `0.0.0.0` only on trusted Wi‑Fi |
 
 You do **not** need to configure each page separately. `scripts/sync_env.sh` copies Kite keys into `server/.env` automatically.
 
@@ -68,7 +70,7 @@ Then set **Backend proxy URL** in the screener to `http://localhost:3000`.
 ./scripts/dev.sh start
         │
         ├── python3 run_agent_api.py     → :8000  (assistant, approvals, tools)
-        └── python3 -m http.server 8080  → :8080  (all UI pages)
+        └── python3 scripts/static_server.py → :8080  (UI; does not serve .env)
 ```
 
 Optional with `START_KITE_PROXY=1`:
@@ -89,28 +91,26 @@ Optional with `START_KITE_PROXY=1`:
 
 ## Same Wi-Fi / other devices
 
-Bookmark **`http://<pc-name>.local:8080/`** (this PC: `http://punisher.local:8080/`). That hostname stays put when DHCP changes the numeric IP. No domain purchase.
+Default bind is **localhost only**. On a trusted home network:
 
 ```powershell
+$env:HOST_BIND = "0.0.0.0"
+./scripts/dev.ps1 start
 ./scripts/dev.ps1 lan          # firewall + print the stable URL
-./scripts/dev.ps1 pin-lan-ip   # Administrator: freeze today's Wi-Fi IP
 ```
 
-Phones and laptops must be on the **same Wi-Fi**. If `.local` does not open, use the pinned IP URL or set a DHCP reservation for this PC in the router.
+Bookmark **`http://<pc-name>.local:8080/`** (hostname stays put when DHCP changes the numeric IP). Enter `BHARAT_SCOUT_API_KEY` when the browser prompts. See `docs/SECURITY.md`.
 
 Run `./scripts/dev.sh setup` or `python3 check_setup.py` anytime for a full diagnostic.
 
 ## Start on Windows boot
 
-The repo does **not** start the UI/API by itself after a reboot. `install_scheduled_tasks.bat` only schedules daily reports and trigger checks.
-
-Register autostart once on this PC:
+`install_scheduled_tasks.bat` only schedules daily reports and trigger checks. To start the API/UI after logon:
 
 ```powershell
-./scripts/dev.ps1 install-autostart
+./scripts/install-boot-service.ps1
+# or: ./scripts/dev.ps1 install-autostart
 ```
-
-Or double-click `install_autostart.bat`. That creates a logon scheduled task (if Windows allows it) plus a Startup-folder shortcut, both of which run `.\scripts\dev.ps1 start`. Remove with `./scripts/dev.ps1 uninstall-autostart`.
 
 Run `./scripts/dev.sh setup` or `python3 check_setup.py` anytime for a full diagnostic.
 

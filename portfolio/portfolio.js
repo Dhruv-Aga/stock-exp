@@ -1,7 +1,8 @@
+import { apiFetch } from "../src/shell/api_client.js";
 import { url } from "../src/shell/paths.js";
 
 const ANALYSIS_URL = url("/paper/analysis.json");
-const ANALYSIS_API_URL = url("/api/paper/analysis");
+const ANALYSIS_API_PATH = "/api/paper/analysis";
 
 const elements = {
   emptyState: document.querySelector("#emptyState"),
@@ -270,8 +271,8 @@ function isEmptyAnalysis(analysis) {
 
 async function loadPortfolio() {
   try {
-    let response = await fetch(ANALYSIS_API_URL, { cache: "no-store" });
-    let source = ANALYSIS_API_URL;
+    let response = await apiFetch(ANALYSIS_API_PATH, { cache: "no-store" });
+    let source = ANALYSIS_API_PATH;
     if (!response.ok) {
       response = await fetch(ANALYSIS_URL, { cache: "no-store" });
       source = ANALYSIS_URL;
