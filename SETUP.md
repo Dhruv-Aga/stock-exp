@@ -11,8 +11,8 @@ Your project path: `D:\work\india-trading-bot`
 | ---------------- | ----------------------------------------------------------------------------------- |
 | Capital          | Rs 1,00,000                                                                         |
 | Income target    | ~Rs 6,000/month (if backtest pattern holds)                                         |
-| Email reports    | [dhruvaga11@gmail.com](mailto:dhruvaga11@gmail.com) (morning 09:15 + evening 21:15) |
-| Broker (planned) | Zerodha Kite Connect                                                                |
+| Email reports    | Optional SMTP in `.env`                                                           |
+| Broker (planned) | Zerodha Kite Connect Personal (free)                                              |
 | Review period    | 1 month paper trading before live                                                   |
 | Trading mode     | **DRY RUN** (`LIVE_TRADING=false`)                                                  |
 
@@ -71,7 +71,7 @@ Vedanta demerged names (VAML, VEDL, VEDPOWER, VISL) share a correlation filter �
 ### Step 1: Kite Connect subscription
 
 1. Go to [https://developers.kite.trade/](https://developers.kite.trade/)
-2. Create a Kite Connect app (~Rs 2,000/month)
+2. Create a Kite Connect app — **Personal (free)** or paid Connect (₹500/month for market data)
 3. Set redirect URL: `http://127.0.0.1:8000/`
 
 ### Step 2: Add keys to `.env`
@@ -81,16 +81,23 @@ KITE_API_KEY=your_api_key
 KITE_API_SECRET=your_api_secret
 ```
 
-### Step 3: Daily login (before 9:15 AM)
+### Step 3: Automated login (TOTP — no browser paste)
 
-```powershell
-python run_kite_login.py
+Add to `.env`:
+
+```env
+ZERODHA_USER_ID=your_client_id
+ZERODHA_PASSWORD=your_password
+ZERODHA_TOTP_SECRET=base32_from_2fa_setup
 ```
 
-- Open the URL, log in to Zerodha
-- Copy `request_token` from redirect URL
-- Paste when prompted
-- Copy printed `KITE_ACCESS_TOKEN` into `.env`
+Then:
+
+```powershell
+./scripts/dev.sh login
+```
+
+See `docs/SECURITY.md` for boot auto-start and LAN security.
 
 ### Step 4: Start small
 

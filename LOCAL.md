@@ -47,7 +47,9 @@ Everything reads from **`.env` at the repo root**:
 | `LIVE_TRADING` | Enable live mode (still requires approval per trade) |
 | `REQUIRE_TRADE_APPROVAL` | Gate live orders behind `/approvals/` |
 | `AUTO_APPROVE_TRADES` | Execute live proposals immediately (keeps audit trail) |
-| `FRONTEND_PORT` / `AGENT_API_PORT` | `dev.sh` ports |
+| `BHARAT_SCOUT_API_KEY` | Protects agent API on LAN (auto-generated at setup) |
+| `ZERODHA_*` | TOTP auto-login — see `docs/SECURITY.md` |
+| `HOST_BIND` | Default `127.0.0.1`; use `0.0.0.0` only on trusted Wi‑Fi |
 
 You do **not** need to configure each page separately. `scripts/sync_env.sh` copies Kite keys into `server/.env` automatically.
 
