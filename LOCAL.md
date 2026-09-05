@@ -16,6 +16,7 @@ Windows PowerShell users can run the same launcher without bash:
 Copy-Item .env.example .env
 ./scripts/dev.ps1 setup
 ./scripts/dev.ps1 start
+./scripts/dev.ps1 install-autostart   # Windows: start API + UI when the PC boots
 ```
 
 Open:
@@ -85,6 +86,31 @@ Optional with `START_KITE_PROXY=1`:
 | Kite tools fail | Add `KITE_*` to `.env`, run `python run_kite_login.py` |
 | Assistant no reply | Add `GROQ_API_KEY` to `.env` |
 | Port in use | `FRONTEND_PORT=8081 ./scripts/dev.sh start` |
+
+## Same Wi-Fi / other devices
+
+Bookmark **`http://<pc-name>.local:8080/`** (this PC: `http://punisher.local:8080/`). That hostname stays put when DHCP changes the numeric IP. No domain purchase.
+
+```powershell
+./scripts/dev.ps1 lan          # firewall + print the stable URL
+./scripts/dev.ps1 pin-lan-ip   # Administrator: freeze today's Wi-Fi IP
+```
+
+Phones and laptops must be on the **same Wi-Fi**. If `.local` does not open, use the pinned IP URL or set a DHCP reservation for this PC in the router.
+
+Run `./scripts/dev.sh setup` or `python3 check_setup.py` anytime for a full diagnostic.
+
+## Start on Windows boot
+
+The repo does **not** start the UI/API by itself after a reboot. `install_scheduled_tasks.bat` only schedules daily reports and trigger checks.
+
+Register autostart once on this PC:
+
+```powershell
+./scripts/dev.ps1 install-autostart
+```
+
+Or double-click `install_autostart.bat`. That creates a logon scheduled task (if Windows allows it) plus a Startup-folder shortcut, both of which run `.\scripts\dev.ps1 start`. Remove with `./scripts/dev.ps1 uninstall-autostart`.
 
 Run `./scripts/dev.sh setup` or `python3 check_setup.py` anytime for a full diagnostic.
 
