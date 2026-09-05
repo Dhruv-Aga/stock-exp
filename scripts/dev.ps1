@@ -11,7 +11,7 @@ $agentPid = Join-Path $devDir "agent.pid"
 $frontendPid = Join-Path $devDir "frontend.pid"
 $kitePid = Join-Path $devDir "kite.pid"
 
-if ($env:HOST_BIND) { $hostBind = $env:HOST_BIND } else { $hostBind = "0.0.0.0" }
+if ($env:HOST_BIND) { $hostBind = $env:HOST_BIND } else { $hostBind = "127.0.0.1" }
 if ($env:FRONTEND_PORT) { $frontendPort = [int]$env:FRONTEND_PORT } else { $frontendPort = 8080 }
 if ($env:AGENT_API_PORT) { $agentPort = [int]$env:AGENT_API_PORT } else { $agentPort = 8000 }
 if ($env:KITE_PROXY_PORT) { $kitePort = [int]$env:KITE_PROXY_PORT } else { $kitePort = 3000 }
@@ -72,9 +72,8 @@ function Invoke-Setup {
         Pop-Location
     }
 
+    python (Join-Path $root "scripts\ensure_local_secrets.py")
     Sync-Env
-    Write-Host ""
-    Write-Host "Running setup check..."
     python check_setup.py
     Write-Host ""
     Write-Host "Generating paper portfolio snapshot (if possible)..."
@@ -90,7 +89,13 @@ function Invoke-Setup {
 function Invoke-Start {
     Write-Banner
     New-Item -ItemType Directory -Force -Path $devDir | Out-Null
+    python (Join-Path $root "scripts\ensure_local_secrets.py")
     Sync-Env
+    try {
+        python (Join-Path $root "run_kite_auto_login.py") | Out-Null
+    } catch {
+        Write-Host "  (Kite auto-login skipped)"
+    }
 
     Remove-PidFile -PidFile $agentPid -Name "agent API"
     Remove-PidFile -PidFile $frontendPid -Name "frontend"
@@ -112,7 +117,7 @@ function Invoke-Start {
     $env:FRONTEND_PORT = [string]$frontendPort
     $frontendLog = Join-Path $devDir "frontend.log"
     $frontendErr = Join-Path $devDir "frontend.err.log"
-    $frontendProcess = Start-Process -FilePath "python" -ArgumentList @("-m", "http.server", [string]$frontendPort, "--bind", $hostBind) -WorkingDirectory $root -RedirectStandardOutput $frontendLog -RedirectStandardError $frontendErr -PassThru -WindowStyle Hidden
+    $frontendProcess = Start-Process -FilePath "python" -ArgumentList @((Join-Path $root "scripts\static_server.py"), "--bind", $hostBind, "--port", [string]$frontendPort) -WorkingDirectory $root -RedirectStandardOutput $frontendLog -RedirectStandardError $frontendErr -PassThru -WindowStyle Hidden
     Set-Content -Path $frontendPid -Value $frontendProcess.Id
 
     if ($env:START_KITE_PROXY -eq "1") {
@@ -226,6 +231,7 @@ function Show-Usage {
 }
 
 switch ($Command.ToLowerInvariant()) {
+    "login" { python (Join-Path $root "run_kite_auto_login.py") @args }
     "setup" { Invoke-Setup }
     "start" { Invoke-Start }
     "stop" { Invoke-Stop }

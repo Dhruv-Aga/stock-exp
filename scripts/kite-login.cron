@@ -1,0 +1,6 @@
+# Daily Kite token refresh before market open (IST weekdays).
+# Install: crontab -e and paste the line below (adjust path).
+#
+# 15 8 * * 1-5 cd /path/to/stock-exp && ./scripts/dev.sh login >> .dev/kite-login.log 2>&1
+#
+# 08:15 IST = 02:45 UTC (no DST). Use `timedatectl` to confirm your timezone.

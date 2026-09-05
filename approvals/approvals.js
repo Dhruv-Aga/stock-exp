@@ -1,4 +1,4 @@
-import { agentUrl } from "../src/shell/config.js";
+import { apiFetch } from "../src/shell/api_client.js";
 import { url } from "../src/shell/paths.js";
 
 const listEl = document.querySelector("#proposalList");
@@ -78,7 +78,7 @@ function renderGrouped(proposals) {
 
 async function loadProposals() {
   try {
-    const healthRes = await fetch(agentUrl("/api/agent/health"));
+    const healthRes = await apiFetch("/api/agent/health");
     if (healthRes.ok) {
       const health = await healthRes.json();
       if (health.auto_approve_trades && bannerEl) {
@@ -91,7 +91,7 @@ async function loadProposals() {
       }
     }
 
-    const res = await fetch(agentUrl("/api/approvals?status=pending"));
+    const res = await apiFetch("/api/approvals?status=pending");
     const data = await res.json();
     statusEl.textContent = `${data.pending_count} pending · approval required before live trades`;
 
@@ -118,7 +118,7 @@ async function handleAction(id, action) {
     );
     if (!ok) return;
 
-    const res = await fetch(agentUrl(`/api/approvals/${id}/approve`), { method: "POST" });
+    const res = await apiFetch(`/api/approvals/${id}/approve`, { method: "POST" });
     const data = await res.json();
     if (!res.ok) {
       alert(data.detail || "Approval failed");
@@ -126,7 +126,7 @@ async function handleAction(id, action) {
     }
     alert(`Trade executed: ${data.execution?.status || "done"}`);
   } else {
-    const res = await fetch(agentUrl(`/api/approvals/${id}/reject`), {
+    const res = await apiFetch(`/api/approvals/${id}/reject`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ note: "Rejected by user" }),

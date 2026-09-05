@@ -1,4 +1,4 @@
-import { agentUrl } from "../src/shell/config.js";
+import { apiFetch } from "../src/shell/api_client.js";
 
 const els = {
   subtitle: document.getElementById("compareSubtitle"),
@@ -123,8 +123,8 @@ async function fetchComparison(refresh = false) {
   els.refreshBtn.disabled = true;
   els.refreshBtn.textContent = "Running…";
   try {
-    const url = agentUrl(`/api/trading/ab-comparison${refresh ? "?refresh=true" : ""}`);
-    const res = await fetch(url, refresh ? { method: "POST" } : { cache: "no-store" });
+    const path = `/api/trading/ab-comparison${refresh ? "?refresh=true" : ""}`;
+    const res = await apiFetch(path, refresh ? { method: "POST" } : { cache: "no-store" });
     if (!res.ok) {
       throw new Error(`API returned ${res.status}`);
     }
