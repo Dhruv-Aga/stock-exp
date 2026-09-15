@@ -268,8 +268,11 @@ def run_weekly_analysis(*, refresh: bool = False, days: int = 7) -> dict:
     week_return = (end_equity / start_equity - 1) * 100 if start_equity else 0
 
     by_symbol: dict[str, list] = {}
+    by_strategy: dict[str, list] = {}
     for t in week_trades:
         by_symbol.setdefault(t["symbol"], []).append(t["pnl"])
+        strategy = (t.get("entry_reason") or "unknown").split(":", 1)[0]
+        by_strategy.setdefault(strategy, []).append(t["pnl"])
 
     wins = [t for t in week_trades if t["pnl"] > 0]
     win_rate = (len(wins) / len(week_trades) * 100) if week_trades else 0.0
@@ -286,6 +289,7 @@ def run_weekly_analysis(*, refresh: bool = False, days: int = 7) -> dict:
         "num_trades": len(week_trades),
         "win_rate": win_rate,
         "by_symbol": by_symbol,
+        "by_strategy": by_strategy,
         "daily_pnl": week_daily,
         "open_positions": results["open_positions"],
     }
@@ -300,7 +304,7 @@ def format_weekly_report(analysis: dict) -> str:
         "=" * 58,
         f"Capital        : Rs {INITIAL_CAPITAL:,.0f}",
         f"Week period    : {analysis['week_start']} to {analysis['week_end']}",
-        f"Markets        : VAML, VEDL, VEDPOWER, VISL, BHEL",
+        f"Markets        : {', '.join(m.symbol.replace('.NS', '') for m in MARKETS)}",
         "",
         "LAST 7 DAYS SUMMARY",
         f"  Start equity   : Rs {analysis['start_equity']:,.0f}",
@@ -311,6 +315,19 @@ def format_weekly_report(analysis: dict) -> str:
         f"  Win rate       : {analysis['win_rate']:.1f}%",
         "",
     ]
+
+    if analysis["by_strategy"]:
+        lines.append("PER STRATEGY (closed trades this week)")
+        lines.append("-" * 58)
+        for strategy, pnls in analysis["by_strategy"].items():
+            wins = sum(1 for pnl in pnls if pnl > 0)
+            avg = sum(pnls) / len(pnls)
+            lines.append(
+                f"  {strategy:22s}  {len(pnls):3d} trades  "
+                f"win {wins / len(pnls) * 100:5.1f}%  avg Rs {avg:,.0f}  "
+                f"total Rs {sum(pnls):,.0f}"
+            )
+        lines.append("")
 
     if analysis["by_symbol"]:
         lines.append("PER SYMBOL (closed trades this week)")

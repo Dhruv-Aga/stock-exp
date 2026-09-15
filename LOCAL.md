@@ -121,7 +121,19 @@ Paper sessions, dashboard refreshes, and daily report emails run on your machine
 ```bash
 ./scripts/dev.sh paper                 # one session + dashboard refresh
 python run_daily_report.py --email     # session + optional SMTP email
+python run_intraday_paper.py           # one safe paper pass (no live orders)
+python run_weekly_paper.py --review    # non-destructive weekly analysis
 ```
+
+## Intraday paper automation (Windows)
+
+Run this once from an Administrator terminal to install the local scheduled tasks:
+
+```powershell
+./scripts/dev.ps1 install-paper-tasks
+```
+
+This adds a 30-minute intraday paper session task and a Sunday 18:00 weekly review. Both write logs under `data/logs/`. The weekly review uses `--review`, so it does not reset the paper account. The intraday task runs paper trading only; it does not approve or execute live Kite orders.
 
 Optional local cron (example: weekdays 09:20 IST after the open):
 

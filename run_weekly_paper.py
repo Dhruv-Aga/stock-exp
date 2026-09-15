@@ -23,11 +23,18 @@ def main():
     parser.add_argument("--email", action="store_true", help="Email the report")
     parser.add_argument("--days", type=int, default=7, help="Lookback days (default 7)")
     parser.add_argument("--no-reset", action="store_true", help="Skip paper state reset")
+    parser.add_argument(
+        "--review",
+        action="store_true",
+        help="Run the rolling analysis without resetting paper state",
+    )
     args = parser.parse_args()
 
     load_env_file()
 
-    if not args.no_reset:
+    # Weekly reviews must not erase the live paper ledger. The historical
+    # reset behavior remains available for explicit backtest runs.
+    if not args.no_reset and not args.review:
         print(reset_paper_account())
         print(reset_live_state())
         print()
