@@ -14,3 +14,5 @@ data/reports/
 *.log
 .dev/
 server/node_modules/
+
+.cursor/

@@ -6,6 +6,15 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+
+def _configure_stdout() -> None:
+    """Scheduled tasks on Windows often use cp1252; reports may contain Unicode."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError):
+            pass
+
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
@@ -17,6 +26,7 @@ REPORT_DIR = ROOT / "data" / "reports"
 
 
 def main():
+    _configure_stdout()
     parser = argparse.ArgumentParser(
         description="Daily paper trading session + dashboard email"
     )
