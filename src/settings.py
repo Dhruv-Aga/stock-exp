@@ -39,8 +39,51 @@ def kite_api_secret() -> str:
     return os.environ.get("KITE_API_SECRET", "").strip()
 
 
-def kite_access_token() -> str:
+def kite_access_token_from_env() -> str:
     return os.environ.get("KITE_ACCESS_TOKEN", "").strip()
+
+
+def kite_access_token() -> str:
+    """Return Kite token from env, falling back to TOTP cache file."""
+    token = kite_access_token_from_env()
+    if token:
+        return token
+    try:
+        from src.kite_auto_login import load_cached_token
+
+        return load_cached_token()
+    except Exception:
+        return ""
+
+
+def zerodha_user_id() -> str:
+    return os.environ.get("ZERODHA_USER_ID", "").strip()
+
+
+def zerodha_password() -> str:
+    return os.environ.get("ZERODHA_PASSWORD", "").strip()
+
+
+def zerodha_totp_secret() -> str:
+    return os.environ.get("ZERODHA_TOTP_SECRET", "").strip()
+
+
+def zerodha_auto_login_configured() -> bool:
+    return bool(
+        kite_api_key()
+        and kite_api_secret()
+        and zerodha_user_id()
+        and zerodha_password()
+        and zerodha_totp_secret()
+    )
+
+
+def api_auth_key() -> str:
+    return os.environ.get("BHARAT_SCOUT_API_KEY", "").strip()
+
+
+def api_auth_required() -> bool:
+    return bool(api_auth_key())
 
 
 def live_trading_enabled() -> bool:

@@ -1,6 +1,8 @@
 @echo off
 setlocal
 cd /d D:\work\india-trading-bot
+set PYTHONIOENCODING=utf-8
+set PYTHONUTF8=1
 
 set LOGDIR=D:\work\india-trading-bot\data\logs
 if not exist "%LOGDIR%" mkdir "%LOGDIR%"

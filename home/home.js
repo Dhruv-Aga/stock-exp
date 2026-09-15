@@ -1,4 +1,4 @@
-import { agentUrl } from "../src/shell/config.js";
+import { apiFetch } from "../src/shell/api_client.js";
 import { url } from "../src/shell/paths.js";
 
 function money(value) {
@@ -86,7 +86,7 @@ async function loadHome() {
   let agentOnline = false;
 
   try {
-    const res = await fetch(agentUrl("/api/trading/summary"), { cache: "no-store" });
+    const res = await apiFetch("/api/trading/summary", { cache: "no-store" });
     if (res.ok) {
       summary = await res.json();
       agentOnline = true;

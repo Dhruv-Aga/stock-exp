@@ -13,11 +13,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from src import settings
+from src.api_auth import ApiAuthMiddleware, require_api_key
 from src.agent.chat import list_available_tools, run_agent_chat
 from src.approvals.executor import approve_and_execute
 from src.approvals.store import list_proposals, pending_count, reject_proposal
@@ -28,14 +30,30 @@ from src.triggers.analyzer import analyze_alert_with_llm, batch_analyze_pending_
 
 settings.load_settings()
 
-app = FastAPI(title="Bharat Scout Trading Assistant", version="1.1.0")
+app = FastAPI(title="Bharat Scout Trading Assistant", version="1.2.0")
+
+app.add_middleware(ApiAuthMiddleware)
+
+_allowed_origins = os.environ.get(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:8080,http://127.0.0.1:8080",
+).split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[o.strip() for o in _allowed_origins if o.strip()],
+    allow_origin_regex=(
+        r"https?://("
+        r"localhost|127\.0\.0\.1|\[::1\]|"
+        r"[\w-]+(\.local)?|"
+        r"192\.168\.\d{1,3}\.\d{1,3}|"
+        r"10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
+        r"172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}"
+        r")(:\d+)?$"
+    ),
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Bharat-Scout-Key", "Authorization"],
 )
 
 
@@ -85,9 +103,18 @@ def _load_paper_analysis() -> dict:
 
 
 @app.get("/api/agent/health")
-def health():
-    return {
+def health(request: Request):
+    public = {
         "ok": True,
+        "auth_required": settings.api_auth_required(),
+    }
+    if settings.api_auth_required():
+        try:
+            require_api_key(request)
+        except HTTPException:
+            return public
+    return {
+        **public,
         "groq_configured": bool(settings.groq_api_key()),
         "kite_configured": settings.kite_configured(),
         "live_trading": not settings.dry_run_mode(),
@@ -95,7 +122,71 @@ def health():
         "auto_approve_trades": settings.auto_approve_trades(),
         "pending_proposals": pending_count(),
         "tools_count": len(list_available_tools()),
+        "zerodha_auto_login": settings.zerodha_auto_login_configured(),
     }
+
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/kite-login", response_class=HTMLResponse)
+def kite_login_callback(request: Request):
+    """Kite Connect login redirect target.
+
+    After authorizing on Kite, Zerodha redirects here with a one-time
+    ``request_token`` in the query string. This page displays that token so the
+    user can paste it into ``run_kite_login.py`` (or complete the exchange
+    directly). The route is public so the redirect works without an API key.
+    """
+    token = request.query_params.get("request_token", "")
+    action = request.query_params.get("action", "")
+    if not token:
+        return HTMLResponse(
+            "<h2>Kite login callback</h2>"
+            "<p>No <code>request_token</code> found in the URL. "
+            "Log in via <code>python run_kite_login.py</code> first.</p>",
+            status_code=200,
+        )
+
+    exchange_error = ""
+    access_token = ""
+    if action == "login":
+        try:
+            from src import settings
+
+            settings.load_settings()  # refresh .env (process may predate credential edits)
+            from src.broker.kite_client import KiteClient
+
+            client = KiteClient(dry_run=False)
+            session = client.generate_session(token)
+            access_token = session.get("access_token", "")
+            if access_token:
+                from src.kite_auto_login import save_cached_token
+
+                save_cached_token(access_token, user_id=session.get("user_id", ""))
+        except Exception as exc:  # noqa: BLE001 - surface any Kite error to the user
+            exchange_error = str(exc)
+
+    rows = "".join(
+        f"<tr><td><code>{k}</code></td><td><code>{v}</code></td></tr>"
+        for k, v in request.query_params.items()
+    )
+    token_html = f"<p><strong>request_token:</strong> <code>{token}</code></p>"
+    if access_token:
+        token_html += (
+            "<p style='color:green'><strong>Success!</strong> Access token obtained "
+            "and cached. It is also synced to <code>.env</code>.</p>"
+        )
+    elif exchange_error:
+        token_html += (
+            f"<p style='color:red'><strong>Token exchange failed:</strong> "
+            f"<code>{exchange_error}</code></p>"
+        )
+    return HTMLResponse(
+        "<h2>Kite login callback</h2>"
+        f"{token_html}"
+        "<p>Copy the <code>request_token</code> value above and paste it into "
+        "<code>run_kite_login.py</code> when prompted.</p>"
+        f"<h3>Query params</h3><table>{rows}</table>"
+    )
 
 
 @app.get("/api/paper/analysis")
@@ -303,6 +394,6 @@ if __name__ == "__main__":
     import os
     import uvicorn
 
-    host = os.environ.get("HOST_BIND", "0.0.0.0")
+    host = os.environ.get("HOST_BIND", "127.0.0.1")
     port = int(os.environ.get("AGENT_API_PORT", "8000"))
     uvicorn.run("run_agent_api:app", host=host, port=port, reload=False)

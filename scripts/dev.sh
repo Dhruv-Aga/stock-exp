@@ -9,7 +9,7 @@ DEV_DIR="$ROOT/.dev"
 AGENT_PID="$DEV_DIR/agent.pid"
 FRONTEND_PID="$DEV_DIR/frontend.pid"
 KITE_PID="$DEV_DIR/kite.pid"
-HOST_BIND="${HOST_BIND:-0.0.0.0}"
+HOST_BIND="${HOST_BIND:-127.0.0.1}"
 FRONTEND_PORT="${FRONTEND_PORT:-8080}"
 AGENT_PORT="${AGENT_API_PORT:-8000}"
 KITE_PORT="${KITE_PROXY_PORT:-3000}"
@@ -50,6 +50,7 @@ cmd_setup() {
   banner
   echo "Installing dependencies..."
   bash "$ROOT/.cursor/install.sh"
+  python3 "$ROOT/scripts/ensure_local_secrets.py"
   bash "$ROOT/scripts/sync_env.sh"
   echo ""
   echo "Running setup check..."
@@ -66,7 +67,13 @@ cmd_start() {
   banner
   mkdir -p "$DEV_DIR"
 
+  python3 "$ROOT/scripts/ensure_local_secrets.py"
   bash "$ROOT/scripts/sync_env.sh"
+
+  if python3 -c "import sys; sys.path.insert(0,'$ROOT'); from src import settings; settings.load_settings(); raise SystemExit(0 if settings.zerodha_auto_login_configured() else 1)" 2>/dev/null; then
+    echo "Refreshing Kite token (TOTP auto-login)..."
+    python3 "$ROOT/run_kite_auto_login.py" || echo "  (Kite auto-login failed — check ZERODHA_* in .env)"
+  fi
 
   # Stop any previous dev processes we started
   cmd_stop 2>/dev/null || true
@@ -82,8 +89,10 @@ cmd_start() {
   nohup env HOST_BIND="$HOST_BIND" python3 "$ROOT/run_agent_api.py" >"$DEV_DIR/agent.log" 2>&1 &
   echo $! >"$AGENT_PID"
 
-  echo "Starting frontend on $HOST_BIND:$FRONTEND_PORT ..."
-  nohup python3 -m http.server "$FRONTEND_PORT" --bind "$HOST_BIND" >"$DEV_DIR/frontend.log" 2>&1 &
+  echo "Starting frontend on $HOST_BIND:$FRONTEND_PORT (restricted static server) ..."
+  nohup env HOST_BIND="$HOST_BIND" FRONTEND_PORT="$FRONTEND_PORT" \
+    python3 "$ROOT/scripts/static_server.py" --bind "$HOST_BIND" --port "$FRONTEND_PORT" \
+    >"$DEV_DIR/frontend.log" 2>&1 &
   echo $! >"$FRONTEND_PID"
 
   if [ "${START_KITE_PROXY:-0}" = "1" ]; then
@@ -103,6 +112,8 @@ cmd_start() {
   echo "  http://localhost:$FRONTEND_PORT/compare/     Paper vs live A/B"
   echo "  http://localhost:$FRONTEND_PORT/screener/    Stock screener"
   if [ "$HOST_BIND" = "0.0.0.0" ] || [ "$HOST_BIND" = "::" ]; then
+    echo ""
+    echo "  WARNING: LAN mode — set BHARAT_SCOUT_API_KEY in .env and enter it in the browser when prompted."
     for ip in $(hostname -I 2>/dev/null || ipconfig getifaddr 2>/dev/null || true); do
       if printf '%s' "$ip" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
         echo "  http://$ip:$FRONTEND_PORT/                   Home network"
@@ -159,6 +170,11 @@ cmd_ab() {
   echo "View at http://localhost:$FRONTEND_PORT/compare/"
 }
 
+cmd_login() {
+  banner
+  python3 "$ROOT/run_kite_auto_login.py" "$@"
+}
+
 usage() {
   banner
   echo ""
@@ -170,19 +186,20 @@ usage() {
   echo "  stop      Stop all dev services"
   echo "  status    Show what's running"
   echo "  paper     Run paper trading session and refresh dashboard"
-  echo "  ab        Run paper vs live-shadow A/B comparison"
+  echo "  login     Refresh Kite token via TOTP (run_kite_auto_login.py)"
   echo ""
   echo "Environment (optional):"
-  echo "  HOST_BIND=0.0.0.0    Bind frontend & API to all adapters for LAN access"
+  echo "  HOST_BIND=0.0.0.0    LAN access (requires BHARAT_SCOUT_API_KEY)"
   echo "  FRONTEND_PORT=8080   AGENT_API_PORT=8000   KITE_PROXY_PORT=3000"
   echo "  START_KITE_PROXY=1   Also start server/ quote proxy"
   echo ""
   echo "Config: single .env at repo root (see .env.example)"
   echo "  GROQ_API_KEY     — assistant chat"
-  echo "  KITE_*           — live portfolio + proxy (synced to server/.env)"
+  echo "  ZERODHA_*          — TOTP auto-login (see docs/SECURITY.md)"
 }
 
 case "${1:-}" in
+  login) cmd_login "${@:2}" ;;
   setup) cmd_setup ;;
   start) cmd_start ;;
   stop) cmd_stop ;;

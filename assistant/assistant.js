@@ -1,4 +1,4 @@
-import { agentUrl } from "../src/shell/config.js";
+import { apiFetch } from "../src/shell/api_client.js";
 import { url } from "../src/shell/paths.js";
 
 const CAPABILITY_GROUPS = [
@@ -115,7 +115,7 @@ function getActiveSession() {
 async function saveSessionToServer(session) {
   if (!session?.id) return;
   try {
-    await fetch(agentUrl(`/api/agent/sessions/${session.id}`), {
+    await apiFetch(`/api/agent/sessions/${session.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -142,7 +142,7 @@ function persistSessions() {
 
 async function loadSessions() {
   try {
-    const res = await fetch(agentUrl("/api/agent/sessions"));
+    const res = await apiFetch("/api/agent/sessions");
     if (res.ok) {
       const data = await res.json();
       const sessions = Array.isArray(data.sessions) ? data.sessions : [];
@@ -421,7 +421,7 @@ function proposalCardFromTools(toolsUsed) {
 
 async function loadHealth() {
   try {
-    const res = await fetch(agentUrl("/api/agent/health"));
+    const res = await apiFetch("/api/agent/health");
     const data = await res.json();
     const parts = [];
     parts.push(data.groq_configured ? "Groq ready" : "Groq not configured");
@@ -446,7 +446,7 @@ async function sendMessage(text) {
   elements.chatInput.disabled = true;
 
   try {
-    const res = await fetch(agentUrl("/api/agent/chat"), {
+    const res = await apiFetch("/api/agent/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages: history }),

@@ -83,11 +83,21 @@ def main():
     else:
         print(warn("Assistant: add GROQ_API_KEY to .env"))
 
+    if settings.zerodha_auto_login_configured():
+        print(ok("Zerodha TOTP auto-login configured"))
+    elif settings.kite_api_key():
+        print(warn("Zerodha auto-login: add ZERODHA_USER_ID, ZERODHA_PASSWORD, ZERODHA_TOTP_SECRET"))
+
+    if settings.api_auth_required():
+        print(ok("API auth: BHARAT_SCOUT_API_KEY set (required for LAN access)"))
+    else:
+        print(warn("API auth: run ./scripts/dev.sh setup to generate BHARAT_SCOUT_API_KEY"))
+
     if settings.kite_configured():
         mode = "LIVE" if settings.live_trading_enabled() else "keys present, paper/dry-run"
         print(ok(f"Kite portfolio: configured ({mode})"))
     else:
-        print(warn("Kite: add KITE_API_KEY, KITE_API_SECRET, KITE_ACCESS_TOKEN"))
+        print(warn("Kite: add KITE_API_KEY, KITE_API_SECRET; run ./scripts/dev.sh login"))
 
     if settings.require_trade_approval():
         if settings.auto_approve_trades():

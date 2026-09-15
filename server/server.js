@@ -96,6 +96,6 @@ app.use((error, _request, response, _next) => {
   response.status(error.status || 500).json({ error: error.message || "Unexpected backend error." });
 });
 
-app.listen(port, () => {
-  console.log(`Bharat Scout Kite proxy listening on port ${port}`);
+app.listen(port, process.env.HOST_BIND || "127.0.0.1", () => {
+  console.log(`Bharat Scout Kite proxy listening on ${process.env.HOST_BIND || "127.0.0.1"}:${port}`);
 });

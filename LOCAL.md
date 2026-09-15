@@ -16,6 +16,7 @@ Windows PowerShell users can run the same launcher without bash:
 Copy-Item .env.example .env
 ./scripts/dev.ps1 setup
 ./scripts/dev.ps1 start
+./scripts/dev.ps1 install-autostart   # Windows: start API + UI when the PC boots
 ```
 
 Open:
@@ -47,7 +48,9 @@ Everything reads from **`.env` at the repo root**:
 | `LIVE_TRADING` | Enable live mode (still requires approval per trade) |
 | `REQUIRE_TRADE_APPROVAL` | Gate live orders behind `/approvals/` |
 | `AUTO_APPROVE_TRADES` | Execute live proposals immediately (keeps audit trail) |
-| `FRONTEND_PORT` / `AGENT_API_PORT` | `dev.sh` ports |
+| `BHARAT_SCOUT_API_KEY` | Protects agent API on LAN (auto-generated at setup) |
+| `ZERODHA_*` | TOTP auto-login — see `docs/SECURITY.md` |
+| `HOST_BIND` | Default `127.0.0.1`; use `0.0.0.0` only on trusted Wi‑Fi |
 
 You do **not** need to configure each page separately. `scripts/sync_env.sh` copies Kite keys into `server/.env` automatically.
 
@@ -67,7 +70,7 @@ Then set **Backend proxy URL** in the screener to `http://localhost:3000`.
 ./scripts/dev.sh start
         │
         ├── python3 run_agent_api.py     → :8000  (assistant, approvals, tools)
-        └── python3 -m http.server 8080  → :8080  (all UI pages)
+        └── python3 scripts/static_server.py → :8080  (UI; does not serve .env)
 ```
 
 Optional with `START_KITE_PROXY=1`:
@@ -86,6 +89,29 @@ Optional with `START_KITE_PROXY=1`:
 | Assistant no reply | Add `GROQ_API_KEY` to `.env` |
 | Port in use | `FRONTEND_PORT=8081 ./scripts/dev.sh start` |
 
+## Same Wi-Fi / other devices
+
+Default bind is **localhost only**. On a trusted home network:
+
+```powershell
+$env:HOST_BIND = "0.0.0.0"
+./scripts/dev.ps1 start
+./scripts/dev.ps1 lan          # firewall + print the stable URL
+```
+
+Bookmark **`http://<pc-name>.local:8080/`** (hostname stays put when DHCP changes the numeric IP). Enter `BHARAT_SCOUT_API_KEY` when the browser prompts. See `docs/SECURITY.md`.
+
+Run `./scripts/dev.sh setup` or `python3 check_setup.py` anytime for a full diagnostic.
+
+## Start on Windows boot
+
+`install_scheduled_tasks.bat` only schedules daily reports and trigger checks. To start the API/UI after logon:
+
+```powershell
+./scripts/install-boot-service.ps1
+# or: ./scripts/dev.ps1 install-autostart
+```
+
 Run `./scripts/dev.sh setup` or `python3 check_setup.py` anytime for a full diagnostic.
 
 ## Paper trading is local-only
@@ -95,7 +121,19 @@ Paper sessions, dashboard refreshes, and daily report emails run on your machine
 ```bash
 ./scripts/dev.sh paper                 # one session + dashboard refresh
 python run_daily_report.py --email     # session + optional SMTP email
+python run_intraday_paper.py           # one safe paper pass (no live orders)
+python run_weekly_paper.py --review    # non-destructive weekly analysis
 ```
+
+## Intraday paper automation (Windows)
+
+Run this once from an Administrator terminal to install the local scheduled tasks:
+
+```powershell
+./scripts/dev.ps1 install-paper-tasks
+```
+
+This adds a 30-minute intraday paper session task and a Sunday 18:00 weekly review. Both write logs under `data/logs/`. The weekly review uses `--review`, so it does not reset the paper account. The intraday task runs paper trading only; it does not approve or execute live Kite orders.
 
 Optional local cron (example: weekdays 09:20 IST after the open):
 

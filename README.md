@@ -79,7 +79,10 @@ This starts the **agent API** (`:8000`) and **frontend** (`:8080`) together. One
 |---------|----------------|
 | `./scripts/dev.sh setup` | Install deps, sync config, health check |
 | `./scripts/dev.sh start` | Run agent API + frontend |
+| `./scripts/dev.ps1 install-autostart` | Windows: start API + UI on boot / logon |
+| `./scripts/dev.ps1 lan` | Windows: firewall + stable same-Wi-Fi URL |
 | `./scripts/dev.sh paper` | Paper trade session + refresh dashboard |
+| `./scripts/dev.ps1 install-paper-tasks` | Windows: 30-minute paper sessions + Sunday review |
 | `./scripts/dev.sh status` | Show running services |
 | `./scripts/dev.sh stop` | Stop all |
 

@@ -1,0 +1,18 @@
+[Unit]
+Description=Bharat Scout local trading stack
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+WorkingDirectory=%h/stock-exp
+EnvironmentFile=-%h/stock-exp/.env
+ExecStartPre=%h/stock-exp/scripts/boot-preflight.sh
+ExecStart=%h/stock-exp/scripts/dev.sh start
+ExecStop=%h/stock-exp/scripts/dev.sh stop
+PIDFile=%h/stock-exp/.dev/agent.pid
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

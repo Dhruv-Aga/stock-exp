@@ -221,7 +221,12 @@ def build_session_plan(
             continue
 
         if not can_trade_side(m.symbol, bar.signal, cash_only=cash_only):
-            plan.skip_messages.append(f"SKIP {m.name} - short not allowed in cash-only mode")
+            # Do not present an unexecutable CNC short as a live opportunity.
+            # Keep the skip visible for auditability, but distinguish it from
+            # a strategy failure.
+            plan.skip_messages.append(
+                f"SKIP {m.name} - short signal filtered: CNC cash-only mode is long-only"
+            )
             continue
 
         if correlation_blocks_new_trade(m.symbol, bar.signal, m.group, portfolio.positions):

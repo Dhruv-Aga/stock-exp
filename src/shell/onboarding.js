@@ -20,7 +20,7 @@ export function mountOnboarding(container, summary) {
     {
       label: "Add KITE_* keys for live portfolio (optional)",
       ok: agent.kite_configured,
-      hint: "python3 run_kite_login.py",
+      hint: "SETUP.md → go live with Zerodha",
       optional: true,
     },
     {

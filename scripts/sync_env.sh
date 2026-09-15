@@ -22,7 +22,7 @@ from pathlib import Path
 
 root = Path(".env")
 server_env = Path("server/.env")
-keys = ("KITE_API_KEY", "KITE_API_SECRET", "KITE_ACCESS_TOKEN", "PORT")
+keys = ("KITE_API_KEY", "KITE_ACCESS_TOKEN", "PORT")
 
 values = {}
 if root.exists():

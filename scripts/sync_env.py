@@ -15,7 +15,7 @@ if not server_env.exists():
     if example.exists():
         server_env.write_text(example.read_text(encoding='utf-8'), encoding='utf-8')
 
-keys = ('KITE_API_KEY', 'KITE_API_SECRET', 'KITE_ACCESS_TOKEN', 'PORT')
+keys = ('KITE_API_KEY', 'KITE_ACCESS_TOKEN', 'PORT')
 values = {}
 if root_env.exists():
     for line in root_env.read_text(encoding='utf-8').splitlines():
@@ -46,7 +46,7 @@ for key in keys:
         out.append(f'{key}={values[key]}')
 
 if 'ALLOWED_ORIGINS' not in '\n'.join(out):
-    out.append('ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,http://0.0.0.0:8080')
+    out.append('ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080')
 
 server_env.write_text('\n'.join(out).rstrip() + '\n', encoding='utf-8')
 print('Synced Kite settings to server/.env')

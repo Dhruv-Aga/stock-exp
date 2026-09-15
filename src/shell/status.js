@@ -1,4 +1,4 @@
-import { agentUrl } from "./config.js";
+import { apiFetch } from "./api_client.js";
 import { url } from "./paths.js";
 
 function pill(label, ok, detail = "") {
@@ -21,7 +21,7 @@ export async function mountStatusStrip(container) {
   container.innerHTML = `<span class="status-pill loading">Checking services…</span>`;
 
   try {
-    const res = await fetch(agentUrl("/api/trading/summary"), { cache: "no-store" });
+    const res = await apiFetch("/api/trading/summary", { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     renderStatus(container, data, true);
@@ -88,7 +88,7 @@ function renderStatus(container, data, agentOnline) {
 
 export async function fetchSummary() {
   try {
-    const res = await fetch(agentUrl("/api/trading/summary"), { cache: "no-store" });
+    const res = await apiFetch("/api/trading/summary", { cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch {
