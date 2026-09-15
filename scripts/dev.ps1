@@ -144,6 +144,10 @@ function Invoke-Start {
     if ($env:START_KITE_PROXY -eq "1") { Stop-Port -Port $kitePort }
     Start-Sleep -Seconds 1
 
+    $python = Get-PythonExe
+    $pythonDir = Split-Path -Parent $python
+    $env:Path = "$pythonDir;$pythonDir\Scripts;" + $env:Path
+
     Write-Host "Starting agent API on :$agentPort ..."
     $env:HOST_BIND = $hostBind
     $env:AGENT_API_PORT = [string]$agentPort
@@ -342,6 +346,7 @@ function Write-LanAccessHints {
     Write-Host ""
     Write-Host "Optional hostname (may not work on all phones):"
     Write-Host "  http://${hostName}.local:$frontendPort/"
+    Write-Host "  http://${hostName}:$frontendPort/"
 }
 
 function Invoke-Lan {
@@ -520,7 +525,6 @@ function Invoke-InstallPaperTasks {
     Start-Process -FilePath $installer -WorkingDirectory $root -Wait
     Write-Host "Paper automation tasks installed."
 }
-
 function Show-Usage {
     Write-Banner
     Write-Host ""
