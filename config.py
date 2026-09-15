@@ -13,38 +13,42 @@ class MarketConfig:
     kite_symbol: str
     kite_exchange: str = "NSE"
     kite_product: str = "CNC"  # CNC delivery equity/ETF; use MIS for intraday
-    allow_short: bool = False  # requires F&O when True
+    # CNC delivery is long-only. Keep False unless a supported derivatives or
+    # intraday-short execution path is explicitly configured and tested.
+    allow_short: bool = False
 
 
 # NSE equities via yfinance (.NS suffix)
 MARKETS: list[MarketConfig] = [
-    MarketConfig(
-        "VAML.NS", "Vedanta Aluminium", "mean_reversion", "15m", "vedanta",
-        kite_symbol="VAML", kite_product="CNC", allow_short=False,
-    ),
+    # Keep one Vedanta exposure in the production universe. The other names
+    # remain available for research/backtests without dominating the book.
     MarketConfig(
         "VEDL.NS", "Vedanta", "momentum_breakout", "1h", "vedanta",
         kite_symbol="VEDL", kite_product="CNC", allow_short=False,
     ),
     MarketConfig(
-        "VEDPOWER.NS", "Vedanta Power", "momentum_breakout", "1h", "vedanta",
-        kite_symbol="VEDPOWER", kite_product="CNC", allow_short=False,
-    ),
-    MarketConfig(
-        "VISL.NS", "Vedanta Iron & Steel", "trend_following", "4h", "vedanta",
-        kite_symbol="VISL", kite_product="CNC", allow_short=False,
-    ),
-    MarketConfig(
         "BHEL.NS", "BHEL", "trend_following", "4h", "industrial",
         kite_symbol="BHEL", kite_product="CNC", allow_short=False,
+    ),
+    MarketConfig(
+        "INFY.NS", "Infosys", "trend_following", "1h", "technology",
+        kite_symbol="INFY", kite_product="CNC", allow_short=False,
+    ),
+    MarketConfig(
+        "HDFCBANK.NS", "HDFC Bank", "momentum_breakout", "1h", "banking",
+        kite_symbol="HDFCBANK", kite_product="CNC", allow_short=False,
+    ),
+    MarketConfig(
+        "SUNPHARMA.NS", "Sun Pharma", "mean_reversion", "1h", "healthcare",
+        kite_symbol="SUNPHARMA", kite_product="CNC", allow_short=False,
     ),
 ]
 
 INITIAL_CAPITAL = 100_000.0  # INR
 RISK_PER_TRADE = 0.01  # 1% hard stop risk per trade
-MAX_POSITIONS = 5
+MAX_POSITIONS = 4
+MAX_POSITIONS_PER_GROUP = 1
 CORRELATION_GROUPS = {
-    # Avoid stacking long exposure across demerged Vedanta entities
     "vedanta": ["VAML.NS", "VEDL.NS", "VEDPOWER.NS", "VISL.NS"],
 }
 

@@ -136,15 +136,21 @@ def parse_strategy_prompt(prompt: str, *, name: str | None = None, symbols: list
         config["interval"] = interval_match.group(1).lower()
 
     extracted = extract_symbols(text, fallback=symbols or [])
+    # Only permit configured production symbols for executable custom
+    # strategies. This prevents prose words such as FOLLOWING or FAST from
+    # becoming bogus yfinance tickers.
+    from config import MARKETS
+    allowed_symbols = {m.symbol for m in MARKETS}
+    extracted = [normalize_symbol(sym) for sym in extracted if normalize_symbol(sym) in allowed_symbols]
     result = {
         "name": (name or "Custom Strategy").strip() or "Custom Strategy",
         "description": text,
-        "symbols": [normalize_symbol(sym) for sym in extracted if sym and sym != ""],
+        "symbols": [sym for sym in extracted if sym],
         "config": config,
         "enabled": True,
     }
     if not result["symbols"]:
-        result["symbols"] = [normalize_symbol(sym) for sym in (list(FUNDAMENTALS.keys())[:5] or [])]
+        result["symbols"] = [m.symbol for m in MARKETS]
     return result
 
 
@@ -245,6 +251,9 @@ def active_custom_strategies() -> list[dict]:
 
 def iter_custom_session_bars(*, refresh: bool = False):
     bars = []
+    from config import MARKETS
+    configured = {m.symbol: m for m in MARKETS}
+    seen_symbols = set()
     for strategy in active_custom_strategies():
         symbols = strategy.get("symbols") or []
         if not symbols:
@@ -254,6 +263,9 @@ def iter_custom_session_bars(*, refresh: bool = False):
         for sym in symbols:
             try:
                 symbol = normalize_symbol(sym)
+                if symbol not in configured or symbol in seen_symbols:
+                    continue
+                seen_symbols.add(symbol)
                 df = load_market_data(symbol, interval, refresh=refresh)
                 if df.empty:
                     continue
@@ -267,7 +279,7 @@ def iter_custom_session_bars(*, refresh: bool = False):
                             symbol=symbol,
                             name=str(strategy.get("name") or symbol),
                             strategy=strategy.get("name") or "custom_strategy",
-                            group="custom",
+                            group=configured[symbol].group,
                             interval=interval,
                         ),
                         row=latest,

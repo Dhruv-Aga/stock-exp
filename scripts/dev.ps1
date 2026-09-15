@@ -6,6 +6,20 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
+$envFile = Join-Path $root ".env"
+if (Test-Path $envFile) {
+    Get-Content -Path $envFile | ForEach-Object {
+        $line = $_.Trim()
+        if (-not $line -or $line.StartsWith("#") -or $line -notmatch "=") { return }
+        $parts = $line.Split("=", 2)
+        $key = $parts[0].Trim()
+        $value = $parts[1].Trim().Trim("'").Trim('"')
+        if ($key -match "^(HOST_BIND|FRONTEND_PORT|AGENT_API_PORT|KITE_PROXY_PORT|START_KITE_PROXY)$") {
+            Set-Item -Path "Env:$key" -Value $value
+        }
+    }
+}
+
 $devDir = Join-Path $root ".dev"
 $agentPid = Join-Path $devDir "agent.pid"
 $frontendPid = Join-Path $devDir "frontend.pid"
@@ -14,7 +28,18 @@ $autostartTaskName = "IndiaTradingBot Dev Server"
 
 function Get-PythonExe {
     $cmd = Get-Command python -ErrorAction SilentlyContinue
-    if ($cmd -and $cmd.Source) { return $cmd.Source }
+    if ($cmd -and $cmd.Source -and (Test-Path $cmd.Source)) { return $cmd.Source }
+    $guesses = @(
+        (Join-Path $env:LOCALAPPDATA "Programs\Python\Python313\python.exe"),
+        (Join-Path $env:LOCALAPPDATA "Programs\Python\Python312\python.exe"),
+        (Join-Path $env:LOCALAPPDATA "Programs\Python\Python311\python.exe"),
+        "C:\Python313\python.exe",
+        "C:\Python312\python.exe",
+        "C:\Python311\python.exe"
+    )
+    foreach ($guess in $guesses) {
+        if (Test-Path $guess) { return $guess }
+    }
     throw "python.exe not found on PATH. Install Python or add it to PATH before starting the server."
 }
 
@@ -96,10 +121,17 @@ function Invoke-Setup {
 function Invoke-Start {
     Write-Banner
     New-Item -ItemType Directory -Force -Path $devDir | Out-Null
-    python (Join-Path $root "scripts\ensure_local_secrets.py")
+    $autoLog = Join-Path $devDir "autostart.log"
+    "$(Get-Date -Format o) starting" | Set-Content -Path $autoLog
+
+    $python = Get-PythonExe
+    $pythonDir = Split-Path -Parent $python
+    $env:Path = "$pythonDir;$pythonDir\Scripts;" + $env:Path
+
+    & $python (Join-Path $root "scripts\ensure_local_secrets.py")
     Sync-Env
     try {
-        python (Join-Path $root "run_kite_auto_login.py") | Out-Null
+        & $python (Join-Path $root "run_kite_auto_login.py") | Out-Null
     } catch {
         Write-Host "  (Kite auto-login skipped)"
     }
@@ -111,10 +143,6 @@ function Invoke-Start {
     Stop-Port -Port $frontendPort
     if ($env:START_KITE_PROXY -eq "1") { Stop-Port -Port $kitePort }
     Start-Sleep -Seconds 1
-
-    $python = Get-PythonExe
-    $pythonDir = Split-Path -Parent $python
-    $env:Path = "$pythonDir;$pythonDir\Scripts;" + $env:Path
 
     Write-Host "Starting agent API on :$agentPort ..."
     $env:HOST_BIND = $hostBind
@@ -140,7 +168,7 @@ function Invoke-Start {
     }
 
     Start-Sleep -Seconds 2
-    Invoke-EnsureLanAccess -Quiet
+    try { Invoke-EnsureLanAccess -Quiet } catch {}
     Invoke-Status
     Write-Host ""
     Write-Host "Open in browser:"
@@ -250,7 +278,7 @@ function Invoke-EnsureLanAccess {
         if (-not $existing) {
             try {
                 New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Protocol TCP -LocalPort $port -Action Allow -Profile Any | Out-Null
-                if (-not $Quiet) { Write-Host "Opened Windows Firewall (Private) for TCP $port" }
+                if (-not $Quiet) { Write-Host "Opened Windows Firewall for TCP $port" }
             } catch {
                 if (-not $Quiet) {
                     Write-Host "Could not add firewall rule for TCP $port. Run as Administrator:"
@@ -259,6 +287,14 @@ function Invoke-EnsureLanAccess {
             }
         }
     }
+    try {
+        $python = Get-PythonExe
+        $progRule = "Bharat Scout Python"
+        if (-not (Get-NetFirewallRule -DisplayName $progRule -ErrorAction SilentlyContinue)) {
+            New-NetFirewallRule -DisplayName $progRule -Direction Inbound -Program $python -Action Allow -Profile Any | Out-Null
+            if (-not $Quiet) { Write-Host "Allowed $python through Windows Firewall" }
+        }
+    } catch {}
     foreach ($svcName in @("fdPHost", "FDResPub")) {
         $svc = Get-Service -Name $svcName -ErrorAction SilentlyContinue
         if (-not $svc) { continue }
@@ -280,22 +316,32 @@ function Invoke-EnsureLanAccess {
     }
 }
 
+function Get-WifiLanIp {
+    $cfg = Get-PrimaryLanConfig
+    if ($cfg -and $cfg.IPv4Address) {
+        $ip = ($cfg.IPv4Address | Select-Object -First 1).IPAddress
+        if ($ip -and $ip -notmatch "^192\.168\.137\.") { return $ip }
+    }
+    $ips = Get-LanIPv4 | Where-Object { $_.InterfaceAlias -match "Wi-?Fi|Ethernet" }
+    if ($ips) { return ($ips | Select-Object -First 1).IPAddress }
+    return $null
+}
+
 function Write-LanAccessHints {
     $hostName = $env:COMPUTERNAME.ToLowerInvariant()
+    $wifiIp = Get-WifiLanIp
     Write-Host ""
-    Write-Host "Same Wi-Fi / LAN (bookmark this, it survives IP changes):"
     if ($hostBind -ne "0.0.0.0" -and $hostBind -ne "::") {
-        Write-Host "  (now bound to $hostBind — set HOST_BIND=0.0.0.0 to listen on Wi-Fi)"
+        Write-Host "LAN blocked: HOST_BIND=$hostBind (set HOST_BIND=0.0.0.0 in .env and restart)"
+        return
     }
+    Write-Host "Phone / tablet on same Wi-Fi - use the IP address (most reliable):"
+    if ($wifiIp) {
+        Write-Host "  http://${wifiIp}:$frontendPort/    <-- open this on your phone"
+    }
+    Write-Host ""
+    Write-Host "Optional hostname (may not work on all phones):"
     Write-Host "  http://${hostName}.local:$frontendPort/"
-    Write-Host "  http://${hostName}:$frontendPort/"
-    $ips = Get-LanIPv4
-    if ($ips) {
-        Write-Host "Current IP (can change with DHCP):"
-        foreach ($addr in $ips) {
-            Write-Host "  http://$($addr.IPAddress):$frontendPort/"
-        }
-    }
 }
 
 function Invoke-Lan {
@@ -467,6 +513,14 @@ function Invoke-UninstallAutostart {
     }
 }
 
+function Invoke-InstallPaperTasks {
+    Write-Banner
+    $installer = Join-Path $root "install_scheduled_tasks.bat"
+    if (-not (Test-Path $installer)) { throw "Missing scheduled-task installer: $installer" }
+    Start-Process -FilePath $installer -WorkingDirectory $root -Wait
+    Write-Host "Paper automation tasks installed."
+}
+
 function Show-Usage {
     Write-Banner
     Write-Host ""
@@ -479,6 +533,7 @@ function Show-Usage {
     Write-Host "  status              Show what's running"
     Write-Host "  paper               Run paper trading session and refresh dashboard"
     Write-Host "  ab                  Run paper vs live-shadow A/B comparison"
+    Write-Host "  install-paper-tasks Install 30-minute paper + weekly review tasks"
     Write-Host "  install-autostart   Start the server when this PC boots / you log in"
     Write-Host "  uninstall-autostart Remove the boot autostart task"
     Write-Host "  lan                 Open firewall and print a stable same-Wi-Fi URL"
@@ -488,11 +543,20 @@ function Show-Usage {
 switch ($Command.ToLowerInvariant()) {
     "login" { python (Join-Path $root "run_kite_auto_login.py") @args }
     "setup" { Invoke-Setup }
-    "start" { Invoke-Start }
+    "start" {
+        try {
+            Invoke-Start
+        } catch {
+            New-Item -ItemType Directory -Force -Path $devDir | Out-Null
+            Add-Content -Path (Join-Path $devDir "autostart.log") -Value "$(Get-Date -Format o) FAIL: $($_.Exception.Message)"
+            throw
+        }
+    }
     "stop" { Invoke-Stop }
     "status" { Invoke-Status }
     "paper" { Invoke-Paper }
     "ab" { Invoke-Ab }
+    "install-paper-tasks" { Invoke-InstallPaperTasks }
     "install-autostart" { Invoke-InstallAutostart }
     "uninstall-autostart" { Invoke-UninstallAutostart }
     "lan" { Invoke-Lan }
